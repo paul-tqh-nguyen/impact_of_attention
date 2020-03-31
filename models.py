@@ -32,6 +32,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
+import torchtext
 from torchtext import data
 from torchtext import datasets
 
@@ -53,9 +54,8 @@ torch.backends.cudnn.deterministic = True
 class AttentionLayers(nn.Module):
     def __init__(self, encoding_hidden_size, attention_intermediate_size, number_of_attention_heads, dropout_probability):
         super().__init__()
-        if __debug__:
-            self.encoding_hidden_size = encoding_hidden_size
-            self.number_of_attention_heads = number_of_attention_heads
+        self.encoding_hidden_size = encoding_hidden_size
+        self.number_of_attention_heads = number_of_attention_heads
         self.attention_layers = nn.Sequential(OrderedDict([
             ("intermediate_attention_layer", nn.Linear(encoding_hidden_size*2, attention_intermediate_size)),
             ("intermediate_attention_dropout_layer", nn.Dropout(dropout_probability)),
@@ -99,7 +99,7 @@ class AttentionLayers(nn.Module):
         return attended_batch
 
 class EEAPNetwork(nn.Module):
-    def __init__(self, vocab_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability):
+    def __init__(self, vocab_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability, pad_idx):
         super().__init__()
         if __debug__:
             self.embedding_size = embedding_size
@@ -107,7 +107,7 @@ class EEAPNetwork(nn.Module):
             self.number_of_encoding_layers = number_of_encoding_layers
             self.number_of_attention_heads = number_of_attention_heads
         self.embedding_layers = nn.Sequential(OrderedDict([
-            ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=PAD_IDX, max_norm=1.0)),
+            ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=pad_idx, max_norm=1.0)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
         ]))
         self.encoding_layers = nn.LSTM(embedding_size,
@@ -279,7 +279,7 @@ class AbstractClassifier():
                 valid_loss, valid_acc = self.validate_one_epoch()
             if valid_loss < best_validation_loss_so_far:
                 best_validation_loss_so_far = valid_loss
-                torch.save(model.state_dict(), 'tut2-model.pt')
+                torch.save(self.model.state_dict(), 'tut2-model.pt')
             print(f'\tTrain Loss: {train_loss:.8f} | Train Acc: {train_acc*100:.8f}%')
             print(f'\t Val. Loss: {valid_loss:.8f} |  Val. Acc: {valid_acc*100:.8f}%')
         self.model.load_state_dict(torch.load('tut2-model.pt')) # @todo change this name
@@ -287,10 +287,10 @@ class AbstractClassifier():
 
 class AbstractPreTrainedEmbeddingTextClassifier(AbstractClassifier):
     def __init__(self, model: nn.Module, loss_function: nn.Module, optimizer: torch.optim.Optimizer,
-                 number_of_epochs: int, batch_size: int,
-                 max_vocab_size: int, pre_trained_embedding_specification: str):
+                 number_of_epochs: int, batch_size: int):
         super().__init__(model, loss_function, optimizer,number_of_epochs, batch_size)
-        
+
+    def load_data(self, batch_size: int, max_vocab_size: int, pre_trained_embedding_specification: str):
         self.text_field = data.Field(tokenize = 'spacy', include_lengths = True, batch_first = True)
         self.label_field = data.LabelField(dtype = torch.long)
         
@@ -307,7 +307,7 @@ class AbstractPreTrainedEmbeddingTextClassifier(AbstractClassifier):
         
         self.train_iterator, self.validation_iterator, self.test_iterator = data.BucketIterator.splits(
             (train_data, valid_data, test_data),
-            batch_size = self.batch_size,
+            batch_size = batch_size,
             sort_within_batch = True,
             device = DEVICE)
 
@@ -316,19 +316,21 @@ class EEAPClassifier(AbstractPreTrainedEmbeddingTextClassifier):
                  dropout_probability: float, max_vocab_size: int, pre_trained_embedding_specification: str,
                  encoding_hidden_size: int, number_of_encoding_layers: int, attention_intermediate_size: int, number_of_attention_heads: int, output_size: int):
         embedding_size = int(torchtext.vocab.pretrained_aliases[pre_trained_embedding_specification].keywords['dim'])
-        model = EEAPNetwork(max_vocab_size,
+        self.load_data(batch_size, max_vocab_size, pre_trained_embedding_specification)
+        model = EEAPNetwork(max_vocab_size+2, # 2 = pad and unk tokens ; assumes max_vocab_size < total vocab size of dataset
                             embedding_size,
                             encoding_hidden_size,
                             number_of_encoding_layers,
                             attention_intermediate_size,
                             number_of_attention_heads,
                             output_size,
-                            dropout_probability)
+                            dropout_probability,
+                            self.pad_idx)
         model = model.to(DEVICE)
         loss_function = nn.CrossEntropyLoss()
         loss_function = loss_function.to(DEVICE)
         optimizer = optim.Adam(model.parameters())
-        super().__init__(model, loss_function, optimizer,number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification)
+        super().__init__(model, loss_function, optimizer,number_of_epochs, batch_size)
         assert self.text_field.vocab.vectors.shape[1] == embedding_size
         model.embedding_layers.embedding_layer.weight.data.copy_(self.text_field.vocab.vectors)
         model.embedding_layers.embedding_layer.weight.data[self.unk_idx] = torch.zeros(embedding_size)
