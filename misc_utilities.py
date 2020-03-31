@@ -24,6 +24,8 @@ File Organization:
 import pdb
 import traceback
 import sys
+import time
+from typing import Callable
 from tqdm import tqdm
 from contextlib import contextmanager
 
@@ -40,7 +42,7 @@ def timer(section_name=None, exitCallback=None):
     if exitCallback != None:
         exitCallback(elapsed_time)
     elif section_name:
-        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
+        print('{section_name} took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
     else:
         print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 

@@ -12,9 +12,9 @@ File Name : classification_models.py
 
 File Organization:
 * Imports
-* Misc. Globals & Global State Initializations
-* Load Data
-* Domain Specific Helpers
+* Misc.
+* Model
+* Classifier
 * Driver
 
 """
@@ -24,10 +24,8 @@ File Organization:
 ###########
 
 import random
-import time
 import spacy
 from collections import OrderedDict
-from typing import Callable
 from misc_utilities import timer, tqdm_with_message
 
 import torch
@@ -42,24 +40,15 @@ from torchtext import datasets
 ################################################
 
 SEED = 1234
-MAX_VOCAB_SIZE = 25_000
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 NLP = spacy.load('en')
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
-NUMBER_OF_EPOCHS = 15
-BATCH_SIZE = 32
-
-DROPOUT_PROBABILITY = 0.5
-NUMBER_OF_ENCODING_LAYERS = 1
-EMBEDDING_SIZE = 100
-ENCODING_HIDDEN_SIZE = 128
-ATTENTION_INTERMEDIATE_SIZE = 8
-NUMBER_OF_ATTENTION_HEADS = 2
-OUTPUT_SIZE = 2
+#################
+# Model Classes #
+#################
 
 class AttentionLayers(nn.Module):
     def __init__(self, encoding_hidden_size, attention_intermediate_size, number_of_attention_heads, dropout_probability):
@@ -204,133 +193,152 @@ class EEAPNetwork(nn.Module):
         
         return prediction
 
-#############
-# Load Data #
-#############
+# @todo create EEPNetwork()
 
-TEXT = data.Field(tokenize = 'spacy', include_lengths = True, batch_first = True)
-LABEL = data.LabelField(dtype = torch.long)
+######################
+# Classifier Classes #
+######################
 
-train_data, test_data = datasets.IMDB.splits(TEXT, LABEL)
-train_data, valid_data = train_data.split(random_state = random.seed(SEED))
-
-TEXT.build_vocab(train_data, max_size = MAX_VOCAB_SIZE, vectors = "glove.6B.100d", unk_init = torch.Tensor.normal_)
-LABEL.build_vocab(train_data)
-
-assert TEXT.vocab.vectors.shape[0] <= MAX_VOCAB_SIZE+2
-assert TEXT.vocab.vectors.shape[1] == EMBEDDING_SIZE
-
-VOCAB_SIZE = len(TEXT.vocab)
-
-train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
-    (train_data, valid_data, test_data),
-    batch_size = BATCH_SIZE,
-    sort_within_batch = True,
-    device = DEVICE)
-
-#print(f'An arbitrary training batch: {" ".join(map(lambda dim: dim[0], map(lambda int_list: list(map(lambda index :TEXT.vocab.itos[index], int_list)), next(iter(train_iterator)).text[0])))}')
-# train_iterator = list(iter(train_iterator))[:10] # @todo get rid of this
-# valid_iterator = list(iter(valid_iterator))[:10] # @todo get rid of this
-# test_iterator = list(iter(test_iterator))[:10] # @todo get rid of this
-
-PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
-UNK_IDX = TEXT.vocab.stoi[TEXT.unk_token]
-
-###########################
-# Domain Specific Helpers #
-###########################
-
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-def discrete_accuracy(y_hat, y):
+def discrete_accuracy(y_hat, y): # @todo use this
     y_hat_indices_of_max = y_hat.argmax(dim=1)
     number_of_correct_answers = (y_hat_indices_of_max == y).float().sum(dim=0)
     mean_accuracy = number_of_correct_answers / y.shape[0]
     return mean_accuracy
 
-def predict_sentiment(model, sentence):
-    model.eval()
-    tokenized = [token.text for token in NLP.tokenizer(sentence)]
-    indexed = [TEXT.vocab.stoi[t] for t in tokenized]
-    lengths = [len(indexed)]
-    tensor = torch.LongTensor(indexed).to(DEVICE)
-    tensor = tensor.view(1,-1)
-    length_tensor = torch.LongTensor(lengths).to(DEVICE)
-    prediction_as_index = model(tensor, length_tensor).argmax(dim=1).item()
-    prediction = LABEL.vocab.itos[prediction_as_index]
-    return prediction
+class AbstractClassifier():
+    def __init__(self, model: nn.Module, loss_function: nn.Module, optimizer: torch.optim.Optimizer,
+                 number_of_epochs: int, batch_size: int):
+        self.model = model
+        self.loss_function = loss_function
+        self.optimizer = optimizer
+        
+        self.number_of_epochs = number_of_epochs
+        self.batch_size = batch_size
+        
+    def count_parameters(self):# @todo use this
+        return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
 
+    def predict_sentiment(self, sentence: str):# @todo use this
+        self.model.eval()
+        tokenized = [token.text for token in NLP.tokenizer(sentence)]
+        indexed = [TEXT.vocab.stoi[t] for t in tokenized]
+        lengths = [len(indexed)]
+        tensor = torch.LongTensor(indexed).to(DEVICE)
+        tensor = tensor.view(1,-1)
+        length_tensor = torch.LongTensor(lengths).to(DEVICE)
+        prediction_as_index = self.model(tensor, length_tensor).argmax(dim=1).item()
+        prediction = LABEL.vocab.itos[prediction_as_index]
+        return prediction
+
+    def train_one_epoch(self):
+        epoch_loss = 0
+        epoch_acc = 0
+        self.model.train()
+        number_of_batches = len(self.train_iterator)
+        for batch in tqdm_with_message(self.train_iterator,
+                                       post_yield_message_func = lambda index: f'Training Accuracy {epoch_acc/(index+1)*100:.8f}%',
+                                       total=number_of_batches,
+                                       bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
+            self.optimizer.zero_grad()
+            text, text_lengths = batch.text
+            predictions = self.model(text, text_lengths)
+            loss = self.loss_function(predictions, batch.label)
+            acc = discrete_accuracy(predictions, batch.label)
+            loss.backward()
+            self.optimizer.step()
+            epoch_loss += loss.item()
+            epoch_acc += acc.item()
+        return epoch_loss / number_of_batches, epoch_acc / number_of_batches
+    
+    def validate_one_epoch(self):
+        epoch_loss = 0
+        epoch_acc = 0
+        number_of_batches = len(self.validation_iterator)
+        self.model.eval()
+        with torch.no_grad():
+            for batch in tqdm_with_message(self.validation_iterator,
+                                           post_yield_message_func = lambda index: f'Validation Accuracy {epoch_acc/(index+1)*100:.8f}%',
+                                           total=number_of_batches,
+                                           bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
+                text, text_lengths = batch.text
+                predictions = self.model(text, text_lengths).squeeze(1)
+                loss = self.loss_function(predictions, batch.label)
+                acc = discrete_accuracy(predictions, batch.label)
+                epoch_loss += loss.item()
+                epoch_acc += acc.item()
+        return epoch_loss / number_of_batches, epoch_acc / number_of_batches
+
+    def train(self):
+        if not (self.train_iterator and self.validation_iterator and self.test_iterator):
+            raise Exception("Data not loaded.")
+        best_validation_loss_so_far = float('inf')
+        print(f'Starting training')
+        for epoch_index in range(self.number_of_epochs):
+            with timer(section_name=f"Epoch {epoch_index}"):
+                train_loss, train_acc = self.train_one_epoch()
+                valid_loss, valid_acc = self.validate_one_epoch()
+            if valid_loss < best_validation_loss_so_far:
+                best_validation_loss_so_far = valid_loss
+                torch.save(model.state_dict(), 'tut2-model.pt')
+            print(f'\tTrain Loss: {train_loss:.8f} | Train Acc: {train_acc*100:.8f}%')
+            print(f'\t Val. Loss: {valid_loss:.8f} |  Val. Acc: {valid_acc*100:.8f}%')
+        self.model.load_state_dict(torch.load('tut2-model.pt')) # @todo change this name
+        test_loss, test_acc = validate(model, test_iterator, loss_function) # @todo record these output results
+
+class AbstractPreTrainedEmbeddingTextClassifier(AbstractClassifier):
+    def __init__(self, model: nn.Module, loss_function: nn.Module, optimizer: torch.optim.Optimizer,
+                 number_of_epochs: int, batch_size: int,
+                 max_vocab_size: int, pre_trained_embedding_specification: str):
+        super().__init__(model, loss_function, optimizer,number_of_epochs, batch_size)
+        
+        self.text_field = data.Field(tokenize = 'spacy', include_lengths = True, batch_first = True)
+        self.label_field = data.LabelField(dtype = torch.long)
+        
+        train_data, test_data = datasets.IMDB.splits(self.text_field, self.label_field)
+        train_data, valid_data = train_data.split(random_state = random.seed(SEED))
+
+        self.text_field.build_vocab(train_data, max_size = max_vocab_size, vectors = pre_trained_embedding_specification, unk_init = torch.Tensor.normal_)
+        self.label_field.build_vocab(train_data)
+        
+        assert self.text_field.vocab.vectors.shape[0] <= max_vocab_size+2
+
+        self.pad_idx = self.text_field.vocab.stoi[self.text_field.pad_token]
+        self.unk_idx = self.text_field.vocab.stoi[self.text_field.unk_token]
+        
+        self.train_iterator, self.validation_iterator, self.test_iterator = data.BucketIterator.splits(
+            (train_data, valid_data, test_data),
+            batch_size = self.batch_size,
+            sort_within_batch = True,
+            device = DEVICE)
+
+class EEAPClassifier(AbstractPreTrainedEmbeddingTextClassifier):
+    def __init__(self, number_of_epochs: int, batch_size: int,
+                 dropout_probability: float, max_vocab_size: int, pre_trained_embedding_specification: str,
+                 encoding_hidden_size: int, number_of_encoding_layers: int, attention_intermediate_size: int, number_of_attention_heads: int, output_size: int):
+        embedding_size = int(torchtext.vocab.pretrained_aliases['glove.6B.100d'].keywords['dim'])
+        model = EEAPNetwork(max_vocab_size,
+                            embedding_size,
+                            encoding_hidden_size,
+                            number_of_encoding_layers,
+                            attention_intermediate_size,
+                            number_of_attention_heads,
+                            output_size,
+                            dropout_probability)
+        model = model.to(DEVICE)
+        loss_function = nn.CrossEntropyLoss()
+        loss_function = loss_function.to(DEVICE)
+        optimizer = optim.Adam(model.parameters())
+        super().__init__(model, loss_function, optimizer,number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification)
+        assert self.text_field.vocab.vectors.shape[1] == embedding_size
+        model.embedding_layers.embedding_layer.weight.data.copy_(self.text_field.vocab.vectors)
+        model.embedding_layers.embedding_layer.weight.data[self.unk_idx] = torch.zeros(embedding_size)
+        model.embedding_layers.embedding_layer.weight.data[self.pad_idx] = torch.zeros(embedding_size)
+
+# @todo create EEPClassifier class
+        
 ##########
 # Driver #
 ##########
 
-def train(model, iterator, optimizer, loss_function):
-    epoch_loss = 0
-    epoch_acc = 0
-    model.train()
-    for batch in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Training Accuracy {epoch_acc/(index+1)*100:.8f}%', total=len(iterator), bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
-        optimizer.zero_grad()
-        text, text_lengths = batch.text
-        predictions = model(text, text_lengths)
-        loss = loss_function(predictions, batch.label)
-        acc = discrete_accuracy(predictions, batch.label)
-        loss.backward()
-        optimizer.step()
-        epoch_loss += loss.item()
-        epoch_acc += acc.item()
-    return epoch_loss / len(iterator), epoch_acc / len(iterator)
-
-def validate(model, iterator, loss_function):
-    epoch_loss = 0
-    epoch_acc = 0
-    model.eval()
-    with torch.no_grad():
-        for batch in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Validation Accuracy {epoch_acc/(index+1)*100:.8f}%', total=len(iterator), bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
-            text, text_lengths = batch.text
-            predictions = model(text, text_lengths).squeeze(1)
-            loss = loss_function(predictions, batch.label)
-            acc = discrete_accuracy(predictions, batch.label)
-            epoch_loss += loss.item()
-            epoch_acc += acc.item()
-    return epoch_loss / len(iterator), epoch_acc / len(iterator)
-
-# def main():
-#     model = EEAPNetwork(VOCAB_SIZE,
-#                         EMBEDDING_SIZE,
-#                         ENCODING_HIDDEN_SIZE,
-#                         NUMBER_OF_ENCODING_LAYERS,
-#                         ATTENTION_INTERMEDIATE_SIZE,
-#                         NUMBER_OF_ATTENTION_HEADS,
-#                         OUTPUT_SIZE,
-#                         DROPOUT_PROBABILITY)
-#     print(f'The model has {count_parameters(model):,} trainable parameters')
-#     model.embedding_layers.embedding_layer.weight.data.copy_(TEXT.vocab.vectors)
-#     model.embedding_layers.embedding_layer.weight.data[UNK_IDX] = torch.zeros(EMBEDDING_SIZE)
-#     model.embedding_layers.embedding_layer.weight.data[PAD_IDX] = torch.zeros(EMBEDDING_SIZE)
-
-#     optimizer = optim.Adam(model.parameters())
-#     loss_function = nn.CrossEntropyLoss()
-#     model = model.to(DEVICE)
-#     loss_function = loss_function.to(DEVICE)
-#     best_valid_loss = float('inf')
-
-#     print(f'Starting training')
-#     for epoch_index in range(NUMBER_OF_EPOCHS):
-#         with timer(section_name=f"Epoch {epoch_index}"):
-#             train_loss, train_acc = train(model, train_iterator, optimizer, loss_function)
-#             valid_loss, valid_acc = validate(model, valid_iterator, loss_function)
-#         if valid_loss < best_valid_loss:
-#             best_valid_loss = valid_loss
-#             torch.save(model.state_dict(), 'tut2-model.pt')
-#         print(f'\tTrain Loss: {train_loss:.8f} | Train Acc: {train_acc*100:.8f}%')
-#         print(f'\t Val. Loss: {valid_loss:.8f} |  Val. Acc: {valid_acc*100:.8f}%')
-#     model.load_state_dict(torch.load('tut2-model.pt'))
-#     test_loss, test_acc = validate(model, test_iterator, loss_function)
-#     print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
-
-#     print(f'predict_sentiment(model, "This film is terrible") {predict_sentiment(model, "This film is terrible")}')
-#     print(f'predict_sentiment(model, "This film is great") {predict_sentiment(model, "This film is great")}')
-
 if __name__ == '__main__':
-    main()
+    print("This file contains several text classification models.")
