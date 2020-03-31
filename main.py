@@ -27,19 +27,37 @@ File Organization:
 ###########
 
 import argparse
+import models
 from misc_utilities import debug_on_error
 
 #################
 # Functionality #
 #################
 
-def deploy_comparison_documents():
-    # @todo implement this
-    raise NotImplementedError
-
-def end_to_end():
-    # @todo implement this
-    raise NotImplementedError
+def train_models():
+    output_size = 2
+    number_of_epochs = 5
+    
+    max_vocab_size = 25_000
+    batch_size = 32
+    dropout_probability = 0.5
+    pre_trained_embedding_specification = 'glove.6B.100d'
+    encoding_hidden_size = 128
+    number_of_encoding_layers = 1
+    attention_intermediate_size = 8
+    number_of_attention_heads = 2
+    classifier = models.EEAPClassifier(number_of_epochs,
+                                       batch_size,
+                                       dropout_probability,
+                                       max_vocab_size,
+                                       pre_trained_embedding_specification,
+                                       encoding_hidden_size,
+                                       number_of_encoding_layers,
+                                       attention_intermediate_size,
+                                       number_of_attention_heads,
+                                       output_size)
+    classifier.train()
+    # @todo finish this implementation
 
 def evaluate_models():
     # @todo implement this
@@ -49,7 +67,11 @@ def generate_comparison_documents():
     # @todo implement this
     raise NotImplementedError
 
-def train_models():
+def deploy_comparison_documents():
+    # @todo implement this
+    raise NotImplementedError
+
+def end_to_end():
     # @todo implement this
     raise NotImplementedError
 

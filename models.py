@@ -215,10 +215,10 @@ class AbstractClassifier():
         self.number_of_epochs = number_of_epochs
         self.batch_size = batch_size
         
-    def count_parameters(self):# @todo use this
+    def count_parameters(self): # @todo use this
         return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
 
-    def predict_sentiment(self, sentence: str):# @todo use this
+    def predict_sentiment(self, sentence: str): # @todo use this
         self.model.eval()
         tokenized = [token.text for token in NLP.tokenizer(sentence)]
         indexed = [TEXT.vocab.stoi[t] for t in tokenized]
@@ -315,7 +315,7 @@ class EEAPClassifier(AbstractPreTrainedEmbeddingTextClassifier):
     def __init__(self, number_of_epochs: int, batch_size: int,
                  dropout_probability: float, max_vocab_size: int, pre_trained_embedding_specification: str,
                  encoding_hidden_size: int, number_of_encoding_layers: int, attention_intermediate_size: int, number_of_attention_heads: int, output_size: int):
-        embedding_size = int(torchtext.vocab.pretrained_aliases['glove.6B.100d'].keywords['dim'])
+        embedding_size = int(torchtext.vocab.pretrained_aliases[pre_trained_embedding_specification].keywords['dim'])
         model = EEAPNetwork(max_vocab_size,
                             embedding_size,
                             encoding_hidden_size,
