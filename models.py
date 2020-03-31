@@ -14,7 +14,6 @@ File Organization:
 * Imports
 * Misc. Globals & Global State Initializations
 * Load Data
-* General Helpers
 * Domain Specific Helpers
 * Driver
 
@@ -24,16 +23,12 @@ File Organization:
 # Imports #
 ###########
 
-import pdb
-import traceback
-import sys
 import random
 import time
 import spacy
-from tqdm import tqdm
-from contextlib import contextmanager
 from collections import OrderedDict
 from typing import Callable
+from misc_utilities import timer, tqdm_with_message
 
 import torch
 import torch.nn as nn
@@ -241,54 +236,6 @@ train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 UNK_IDX = TEXT.vocab.stoi[TEXT.unk_token]
 
-###################
-# General Helpers #
-###################
-
-@contextmanager
-def timer(section_name=None, exitCallback=None):
-    start_time = time.time()
-    yield
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    if exitCallback != None:
-        exitCallback(elapsed_time)
-    elif section_name:
-        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
-    else:
-        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
-
-def debug_on_error(func):
-    def func_wrapped(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as err:
-            print(f'Exception Class: {type(err)}')
-            print(f'Exception Args: {err.args}')
-            extype, value, tb = sys.exc_info()
-            traceback.print_exc()
-            pdb.post_mortem(tb)
-    return func_wrapped
-
-def _dummy_tqdm_message_func(index: int):
-    return ''
-
-def tqdm_with_message(iterable,
-                      pre_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
-                      post_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
-                      *args, **kwargs):
-    progress_bar_iterator = tqdm(iterable, *args, **kwargs)
-    for index, element in enumerate(progress_bar_iterator):
-        if pre_yield_message_func != _dummy_tqdm_message_func:
-            pre_yield_message = pre_yield_message_func(index)
-            progress_bar_iterator.set_description(pre_yield_message)
-            progress_bar_iterator.refresh()
-        yield element
-        if post_yield_message_func != _dummy_tqdm_message_func:
-            post_yield_message = post_yield_message_func(index)
-            progress_bar_iterator.set_description(post_yield_message)
-            progress_bar_iterator.refresh()
-
 ###########################
 # Domain Specific Helpers #
 ###########################
@@ -348,43 +295,42 @@ def validate(model, iterator, loss_function):
             epoch_acc += acc.item()
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
-@debug_on_error
-def main():
-    model = EEAPNetwork(VOCAB_SIZE,
-                        EMBEDDING_SIZE,
-                        ENCODING_HIDDEN_SIZE,
-                        NUMBER_OF_ENCODING_LAYERS,
-                        ATTENTION_INTERMEDIATE_SIZE,
-                        NUMBER_OF_ATTENTION_HEADS,
-                        OUTPUT_SIZE,
-                        DROPOUT_PROBABILITY)
-    print(f'The model has {count_parameters(model):,} trainable parameters')
-    model.embedding_layers.embedding_layer.weight.data.copy_(TEXT.vocab.vectors)
-    model.embedding_layers.embedding_layer.weight.data[UNK_IDX] = torch.zeros(EMBEDDING_SIZE)
-    model.embedding_layers.embedding_layer.weight.data[PAD_IDX] = torch.zeros(EMBEDDING_SIZE)
+# def main():
+#     model = EEAPNetwork(VOCAB_SIZE,
+#                         EMBEDDING_SIZE,
+#                         ENCODING_HIDDEN_SIZE,
+#                         NUMBER_OF_ENCODING_LAYERS,
+#                         ATTENTION_INTERMEDIATE_SIZE,
+#                         NUMBER_OF_ATTENTION_HEADS,
+#                         OUTPUT_SIZE,
+#                         DROPOUT_PROBABILITY)
+#     print(f'The model has {count_parameters(model):,} trainable parameters')
+#     model.embedding_layers.embedding_layer.weight.data.copy_(TEXT.vocab.vectors)
+#     model.embedding_layers.embedding_layer.weight.data[UNK_IDX] = torch.zeros(EMBEDDING_SIZE)
+#     model.embedding_layers.embedding_layer.weight.data[PAD_IDX] = torch.zeros(EMBEDDING_SIZE)
 
-    optimizer = optim.Adam(model.parameters())
-    loss_function = nn.CrossEntropyLoss()
-    model = model.to(DEVICE)
-    loss_function = loss_function.to(DEVICE)
-    best_valid_loss = float('inf')
+#     optimizer = optim.Adam(model.parameters())
+#     loss_function = nn.CrossEntropyLoss()
+#     model = model.to(DEVICE)
+#     loss_function = loss_function.to(DEVICE)
+#     best_valid_loss = float('inf')
 
-    print(f'Starting training')
-    for epoch_index in range(NUMBER_OF_EPOCHS):
-        with timer(section_name=f"Epoch {epoch_index}"):
-            train_loss, train_acc = train(model, train_iterator, optimizer, loss_function)
-            valid_loss, valid_acc = validate(model, valid_iterator, loss_function)
-        if valid_loss < best_valid_loss:
-            best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'tut2-model.pt')
-        print(f'\tTrain Loss: {train_loss:.8f} | Train Acc: {train_acc*100:.8f}%')
-        print(f'\t Val. Loss: {valid_loss:.8f} |  Val. Acc: {valid_acc*100:.8f}%')
-    model.load_state_dict(torch.load('tut2-model.pt'))
-    test_loss, test_acc = validate(model, test_iterator, loss_function)
-    print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
+#     print(f'Starting training')
+#     for epoch_index in range(NUMBER_OF_EPOCHS):
+#         with timer(section_name=f"Epoch {epoch_index}"):
+#             train_loss, train_acc = train(model, train_iterator, optimizer, loss_function)
+#             valid_loss, valid_acc = validate(model, valid_iterator, loss_function)
+#         if valid_loss < best_valid_loss:
+#             best_valid_loss = valid_loss
+#             torch.save(model.state_dict(), 'tut2-model.pt')
+#         print(f'\tTrain Loss: {train_loss:.8f} | Train Acc: {train_acc*100:.8f}%')
+#         print(f'\t Val. Loss: {valid_loss:.8f} |  Val. Acc: {valid_acc*100:.8f}%')
+#     model.load_state_dict(torch.load('tut2-model.pt'))
+#     test_loss, test_acc = validate(model, test_iterator, loss_function)
+#     print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
 
-    print(f'predict_sentiment(model, "This film is terrible") {predict_sentiment(model, "This film is terrible")}')
-    print(f'predict_sentiment(model, "This film is great") {predict_sentiment(model, "This film is great")}')
+#     print(f'predict_sentiment(model, "This film is terrible") {predict_sentiment(model, "This film is terrible")}')
+#     print(f'predict_sentiment(model, "This film is great") {predict_sentiment(model, "This film is great")}')
 
 if __name__ == '__main__':
     main()

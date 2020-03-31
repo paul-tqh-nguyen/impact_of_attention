@@ -27,6 +27,7 @@ File Organization:
 ###########
 
 import argparse
+from misc_utilities import debug_on_error
 
 #################
 # Functionality #
@@ -56,6 +57,7 @@ def train_models():
 # Driver #
 ##########
 
+@debug_on_error
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-train-models', action='store_true', help="Instantiate the process of training all of the models we intend to compare.")
