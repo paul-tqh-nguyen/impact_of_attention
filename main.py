@@ -1,4 +1,5 @@
-#!/usr/bin/python3 -OO
+#!/usr/bin/python3
+"#!/usr/bin/python3 -OO" # @todo make this the default
 
 """
 
