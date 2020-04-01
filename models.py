@@ -31,6 +31,7 @@ from misc_utilities import timer, debug_on_error, tqdm_with_message
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchtext
 from torch.autograd import Variable
 from torchtext import data
 from torchtext import datasets
@@ -50,19 +51,6 @@ NLP = spacy.load('en')
 ##########
 # Models #
 ##########
-
-MAX_VOCAB_SIZE = 25_000
-
-NUMBER_OF_EPOCHS = 5
-BATCH_SIZE = 32
-
-DROPOUT_PROBABILITY = 0.5
-NUMBER_OF_ENCODING_LAYERS = 1
-EMBEDDING_SIZE = 100
-ENCODING_HIDDEN_SIZE = 128
-ATTENTION_INTERMEDIATE_SIZE = 8
-NUMBER_OF_ATTENTION_HEADS = 2
-OUTPUT_SIZE = 2
 
 class AttentionLayers(nn.Module):
     def __init__(self, encoding_hidden_size, attention_intermediate_size, number_of_attention_heads, dropout_probability):
@@ -139,7 +127,6 @@ class EEAPNetwork(nn.Module):
         if __debug__:
             max_sentence_length = max(text_lengths)
             batch_size = text_batch.shape[0]
-        assert batch_size <= BATCH_SIZE
         assert tuple(text_batch.shape) == (batch_size, max_sentence_length)
         assert tuple(text_lengths.shape) == (batch_size,)
 
@@ -221,48 +208,50 @@ def discrete_accuracy(y_hat, y):
 ###############
 
 class EEAPClassifier():
-    def __init__(self):
-        self.load_data()
-        self.initialize_model_and_optimizer()
+    def __init__(self, number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability):
+        self.number_of_epochs = number_of_epochs
+        self.load_data(batch_size, pre_trained_embedding_specification, max_vocab_size)
+        self.initialize_model_and_optimizer(pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability)
         self.best_valid_loss = float('inf')
     
-    def load_data(self):
+    def load_data(self, batch_size, pre_trained_embedding_specification, max_vocab_size):
         self.text_field = data.Field(tokenize = 'spacy', include_lengths = True, batch_first = True)
         self.label_field = data.LabelField(dtype = torch.long)
         
         train_data, test_data = datasets.IMDB.splits(self.text_field, self.label_field)
         train_data, valid_data = train_data.split(random_state = random.seed(SEED))
         
-        self.text_field.build_vocab(train_data, max_size = MAX_VOCAB_SIZE, vectors = "glove.6B.100d", unk_init = torch.Tensor.normal_)
+        self.text_field.build_vocab(train_data, max_size = max_vocab_size, vectors = pre_trained_embedding_specification, unk_init = torch.Tensor.normal_)
         self.label_field.build_vocab(train_data)
         
-        assert self.text_field.vocab.vectors.shape[0] <= MAX_VOCAB_SIZE+2
-        assert self.text_field.vocab.vectors.shape[1] == EMBEDDING_SIZE
+        assert self.text_field.vocab.vectors.shape[0] <= max_vocab_size+2
+        assert self.text_field.vocab.vectors.shape[1] == int(torchtext.vocab.pretrained_aliases[pre_trained_embedding_specification].keywords['dim'])
         
         self.vocab_size = len(self.text_field.vocab)
         
         self.train_iterator, self.valid_iterator, self.test_iterator = data.BucketIterator.splits(
             (train_data, valid_data, test_data),
-            batch_size = BATCH_SIZE,
+            batch_size = batch_size,
             sort_within_batch = True,
             device = DEVICE)
         
         self.pad_idx = self.text_field.vocab.stoi[self.text_field.pad_token]
         self.unk_idx = self.text_field.vocab.stoi[self.text_field.unk_token]        
             
-    def initialize_model_and_optimizer(self):
+    def initialize_model_and_optimizer(self, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability):
+        embedding_size = int(torchtext.vocab.pretrained_aliases[pre_trained_embedding_specification].keywords['dim'])
         self.model = EEAPNetwork(self.vocab_size,
-                                 EMBEDDING_SIZE,
-                                 ENCODING_HIDDEN_SIZE,
-                                 NUMBER_OF_ENCODING_LAYERS,
-                                 ATTENTION_INTERMEDIATE_SIZE,
-                                 NUMBER_OF_ATTENTION_HEADS,
-                                 OUTPUT_SIZE,
-                                 DROPOUT_PROBABILITY,
+                                 embedding_size,
+                                 encoding_hidden_size,
+                                 number_of_encoding_layers,
+                                 attention_intermediate_size,
+                                 number_of_attention_heads,
+                                 output_size,
+                                 dropout_probability,
                                  self.pad_idx)
         self.model.embedding_layers.embedding_layer.weight.data.copy_(self.text_field.vocab.vectors)
-        self.model.embedding_layers.embedding_layer.weight.data[self.unk_idx] = torch.zeros(EMBEDDING_SIZE)
-        self.model.embedding_layers.embedding_layer.weight.data[self.pad_idx] = torch.zeros(EMBEDDING_SIZE)
+        self.model.embedding_layers.embedding_layer.weight.data[self.unk_idx] = torch.zeros(embedding_size)
+        self.model.embedding_layers.embedding_layer.weight.data[self.pad_idx] = torch.zeros(embedding_size)
         self.model = self.model.to(DEVICE)
         
         self.optimizer = optim.Adam(self.model.parameters())
@@ -318,7 +307,7 @@ class EEAPClassifier():
         
     def train(self):
         print(f'Starting training')
-        for epoch_index in range(NUMBER_OF_EPOCHS):
+        for epoch_index in range(self.number_of_epochs):
             with timer(section_name=f"Epoch {epoch_index}"):
                 train_loss, train_acc = self.train_one_epoch()
                 valid_loss, valid_acc = self.validate()
@@ -336,7 +325,19 @@ class EEAPClassifier():
 
 @debug_on_error
 def main():
-    classifier = EEAPClassifier()
+    number_of_epochs = 5
+    batch_size = 32
+    
+    max_vocab_size = 25_000
+    pre_trained_embedding_specification = "glove.6B.100d"
+    encoding_hidden_size = 128
+    number_of_encoding_layers = 1
+    attention_intermediate_size = 8
+    number_of_attention_heads = 2
+    output_size = 2
+    dropout_probability = 0.5
+
+    classifier = EEAPClassifier(number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability)
     classifier.train()
 
 if __name__ == '__main__':
