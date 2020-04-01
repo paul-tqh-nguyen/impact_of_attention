@@ -13,6 +13,7 @@ File Name : classification_models.py
 File Organization:
 * Imports
 * Misc. Globals & Global State Initializations
+* Domain Specific Helpers
 * Models
 * Classifiers
 * Driver
@@ -23,6 +24,7 @@ File Organization:
 # Imports #
 ###########
 
+import os
 import random
 import spacy
 from collections import OrderedDict
@@ -47,6 +49,16 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
 NLP = spacy.load('en')
+
+###########################
+# Domain Specific Helpers #
+###########################
+
+def discrete_accuracy(y_hat, y):
+    y_hat_indices_of_max = y_hat.argmax(dim=1)
+    number_of_correct_answers = (y_hat_indices_of_max == y).float().sum(dim=0)
+    mean_accuracy = number_of_correct_answers / y.shape[0]
+    return mean_accuracy
 
 ##########
 # Models #
@@ -193,22 +205,15 @@ class EEAPNetwork(nn.Module):
         
         return prediction
 
-###########################
-# Domain Specific Helpers #
-###########################
-
-def discrete_accuracy(y_hat, y):
-    y_hat_indices_of_max = y_hat.argmax(dim=1)
-    number_of_correct_answers = (y_hat_indices_of_max == y).float().sum(dim=0)
-    mean_accuracy = number_of_correct_answers / y.shape[0]
-    return mean_accuracy
-
 ###############
 # Classifiers #
 ###############
 
 class EEAPClassifier():
-    def __init__(self, number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability):
+    def __init__(self, number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability, output_directory):
+        self.output_directory = output_directory
+        if not os.path.exists(self.output_directory):
+            os.makedirs(self.output_directory)
         self.number_of_epochs = number_of_epochs
         self.load_data(batch_size, pre_trained_embedding_specification, max_vocab_size)
         self.initialize_model_and_optimizer(pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability)
@@ -289,14 +294,14 @@ class EEAPClassifier():
             epoch_loss += loss.item()
             epoch_acc += acc.item()
         return epoch_loss / number_of_batches, epoch_acc / number_of_batches
-    
-    def validate(self):
+        
+    def evaluate(self, iterator):
         epoch_loss = 0
         epoch_acc = 0
         self.model.eval()
-        number_of_batches = len(self.valid_iterator)
+        number_of_batches = len(iterator)
         with torch.no_grad():
-            for batch in tqdm_with_message(self.valid_iterator, post_yield_message_func = lambda index: f'Validation Accuracy {epoch_acc/(index+1)*100:.8f}%', total=number_of_batches, bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
+            for batch in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Validation Accuracy {epoch_acc/(index+1)*100:.8f}%', total=number_of_batches, bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
                 text, text_lengths = batch.text
                 predictions = self.model(text, text_lengths).squeeze(1)
                 loss = self.loss_function(predictions, batch.label)
@@ -304,8 +309,17 @@ class EEAPClassifier():
                 epoch_loss += loss.item()
                 epoch_acc += acc.item()
         return epoch_loss / number_of_batches, epoch_acc / number_of_batches
-        
+
+    def validate(self):
+        return self.evaluate(self.valid_iterator)
+    
+    def test(self):
+        return self.evaluate(self.test_iterator)
+    
     def train(self):
+        printf('This model has {self.count_parameters()} parameters.')
+        saved_model_location = os.path.join(self.output_directory, 'best-performing-model.pt')
+        printf('Best performing models will be saved at {saved_model_location}')
         print(f'Starting training')
         for epoch_index in range(self.number_of_epochs):
             with timer(section_name=f"Epoch {epoch_index}"):
@@ -313,33 +327,14 @@ class EEAPClassifier():
                 valid_loss, valid_acc = self.validate()
             if valid_loss < self.best_valid_loss:
                 self.best_valid_loss = valid_loss
-                torch.save(self.model.state_dict(), 'tut2-model.pt')
+                torch.save(self.model.state_dict(), saved_model_location)
             print(f'\tTrain Loss: {train_loss:.8f} | Train Acc: {train_acc*100:.8f}%')
             print(f'\t Val. Loss: {valid_loss:.8f} |  Val. Acc: {valid_acc*100:.8f}%')
-        self.model.load_state_dict(torch.load('tut2-model.pt'))
-        # test_loss, test_acc = validate(model, self.test_iterator, loss_function) # @todo make this work
+        self.model.load_state_dict(torch.load(saved_model_location))
 
 ##########
 # Driver #
 ##########
 
-@debug_on_error
-def main():
-    number_of_epochs = 5
-    batch_size = 32
-    
-    max_vocab_size = 25_000
-    pre_trained_embedding_specification = "glove.6B.100d"
-    encoding_hidden_size = 128
-    number_of_encoding_layers = 1
-    attention_intermediate_size = 8
-    number_of_attention_heads = 2
-    output_size = 2
-    dropout_probability = 0.5
-
-    classifier = EEAPClassifier(number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability)
-    classifier.train()
-
 if __name__ == '__main__':
-    main()
-# @todo update the main to just print what this does
+    print("This file contains several text classification models.")
