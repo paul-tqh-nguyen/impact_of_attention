@@ -33,6 +33,9 @@ from contextlib import contextmanager
 # Miscellaneous Utilities #
 ###########################
 
+def implies(antecedent: bool, consequent: bool) -> bool:
+    return not antecedent or consequent
+
 @contextmanager
 def timer(section_name=None, exitCallback=None):
     start_time = time.time()
