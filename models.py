@@ -21,8 +21,6 @@ File Organization:
 
 """
 
-# @todo add type declarations
-
 ###########
 # Imports #
 ###########
@@ -219,6 +217,12 @@ class EEAPClassifier():
         if not os.path.exists(self.output_directory):
             os.makedirs(self.output_directory)
         self.number_of_epochs = number_of_epochs
+        self.batch_size = batch_size
+        self.pre_trained_embedding_specification = pre_trained_embedding_specification
+        self.encoding_hidden_size = encoding_hidden_size
+        self.number_of_encoding_layers = number_of_encoding_layers
+        self.attention_intermediate_size = attention_intermediate_size
+        self.dropout_probability = dropout_probability
         self.load_data(batch_size, pre_trained_embedding_specification, max_vocab_size)
         self.initialize_model_and_optimizer(pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability, final_representation)
         self.best_valid_loss = float('inf')
@@ -299,7 +303,7 @@ class EEAPClassifier():
             acc = discrete_accuracy(predictions, batch.label)
             loss.backward()
             self.optimizer.step()
-            self.training_epoch_accuracy_loss_triples.append((self.current_epoch+batch_index/number_of_batches, loss.item(), acc.item()))
+            self.training_epoch_accuracy_loss_triples.append((self.current_epoch+batch_index/number_of_batches, acc.item(), loss.item()))
             epoch_loss += loss.item()
             epoch_acc += acc.item()
         return epoch_loss / number_of_batches, epoch_acc / number_of_batches
@@ -336,6 +340,8 @@ class EEAPClassifier():
         validation_df.to_csv(os.path.join(self.output_directory, 'validation_results.csv'), index=False)
         plt.figure(figsize=(20.0,10.0))
         plt.grid()
+        plt.xlim(0.0, self.number_of_epochs)
+        plt.ylim(0.0, 1.0)
         plt.plot(training_df['epoch'], training_df['accuracy'], label='Training Accuracy')
         plt.plot(training_df['epoch'], training_df['loss'], label='Training Loss')
         plt.plot(validation_df['epoch'], validation_df['mean_accuracy'], label='Validation Mean Accuracy')
@@ -372,6 +378,16 @@ class EEAPClassifier():
             validation_number_epochs_to_within_ten_percent_of_max_accuracy = float(validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.10]['epoch'].min())
 
             result_summary = {
+                'number_of_epochs': self.number_of_epochs,
+                'batch_size': self.batch_size,
+                'vocab_size': self.vocab_size,
+                'pre_trained_embedding_specification': self.pre_trained_embedding_specification,
+                'encoding_hidden_size': self.encoding_hidden_size,
+                'number_of_encoding_layers': self.number_of_encoding_layers,
+                'attention_intermediate_size': self.attention_intermediate_size,
+                'number_of_attention_heads': None if self.model.final_representation == 'hidden' else self.model.attention_layers.number_of_attention_heads,
+                'dropout_probability': self.dropout_probability,
+                'final_representation': self.model.final_representation, 
                 'best_training_accuracy': best_training_accuracy,
                 'best_training_accuracy_epoch': best_training_accuracy_epoch,
                 'best_training_loss': best_training_loss,
