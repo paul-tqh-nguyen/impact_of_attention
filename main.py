@@ -71,7 +71,8 @@ def train_models():
     import models
     number_of_epochs = 5
     output_size = 2
-    model_hyperparameter_specifications = model_hyperparameter_specification_generator()
+    model_hyperparameter_specifications = list(model_hyperparameter_specification_generator())
+    number_of_model_hyperparameter_specifications = len(model_hyperparameter_specifications)
     for model_index, model_hyperparameter_specification in enumerate(model_hyperparameter_specifications):
         batch_size = model_hyperparameter_specification['batch_size']
         max_vocab_size = model_hyperparameter_specification['max_vocab_size']
@@ -83,7 +84,8 @@ def train_models():
         dropout_probability = model_hyperparameter_specification['dropout_probability']
         final_representation = model_hyperparameter_specification['final_representation']
         output_directory = model_hyperparameter_specification['output_directory']
-        print(f"Working on model {model_index}")
+        print(f"Working on model {model_index}/{number_of_model_hyperparameter_specifications}")
+        print()
         print(f"Model hyperparameters are:")
         print(f'        number_of_epochs: {number_of_epochs}')
         print(f'        batch_size: {batch_size}')

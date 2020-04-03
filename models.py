@@ -30,8 +30,11 @@ File Organization:
 import os
 import random
 import spacy
+import json
+import pandas as pd
 from collections import OrderedDict
 from misc_utilities import implies, timer, debug_on_error, tqdm_with_message
+from matplotlib import pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -311,18 +314,89 @@ class EEAPClassifier():
                 predictions = self.model(text, text_lengths).squeeze(1)
                 loss = self.loss_function(predictions, batch.label)
                 acc = discrete_accuracy(predictions, batch.label)
-                if is_validation:
-                    self.validation_epoch_accuracy_loss_triples.append((self.current_epoch+batch_index/number_of_batches, loss.item(), acc.item()))
                 epoch_loss += loss.item()
                 epoch_acc += acc.item()
-        return epoch_loss / number_of_batches, epoch_acc / number_of_batches
+        mean_loss = epoch_loss / number_of_batches
+        mean_accuracy = epoch_acc / number_of_batches
+        if is_validation:
+            self.validation_epoch_accuracy_loss_triples.append((self.current_epoch+1, mean_accuracy, mean_loss))
+        return mean_loss, mean_accuracy
 
     def validate(self):
         return self.evaluate(self.validation_iterator, True)
     
     def test(self):
         return self.evaluate(self.test_iterator, False)
-    
+
+    def log_results(self, test_loss, test_acc):
+        training_df = pd.DataFrame(self.training_epoch_accuracy_loss_triples, columns=['epoch','accuracy','loss'])
+        training_df.to_csv(os.path.join(self.output_directory, 'training_results.csv'), index=False)
+        validation_df = pd.DataFrame(self.validation_epoch_accuracy_loss_triples, columns=['epoch','mean_accuracy','mean_loss'])
+        validation_df.to_csv(os.path.join(self.output_directory, 'validation_results.csv'), index=False)
+        plt.figure(figsize=(20.0,10.0))
+        plt.grid()
+        plt.plot(training_df['epoch'], training_df['accuracy'], label='Training Accuracy')
+        plt.plot(training_df['epoch'], training_df['loss'], label='Training Loss')
+        plt.plot(validation_df['epoch'], validation_df['mean_accuracy'], label='Validation Mean Accuracy')
+        plt.plot(validation_df['epoch'], validation_df['mean_loss'], label='Validation Mean  Loss')
+        plt.title('Training & Validation Performance')
+        plt.ylabel('Loss / Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend(loc='upper right')
+        plt.ylim(bottom=0)
+        plt.xlim(left=0)
+        plt.savefig(os.path.join(self.output_directory, 'performance_over_time.png'))
+        plt.close()
+        with open(os.path.join(self.output_directory, 'result_summary.json'), 'w') as outfile:
+            best_training_accuracy = training_df['accuracy'].max()
+            best_training_accuracy_epoch = training_df.loc[best_training_accuracy == training_df['accuracy']]['epoch'].min()
+            best_training_loss = training_df['loss'].max()
+            best_training_loss_epoch = training_df.loc[best_training_loss == training_df['loss']]['epoch'].min()
+            training_number_epochs_to_within_three_percent_of_max_accuracy = training_df.loc[best_training_loss - training_df['loss']<0.03]['epoch'].min()
+            training_number_epochs_to_within_five_percent_of_max_accuracy = training_df.loc[best_training_loss - training_df['loss']<0.05]['epoch'].min()
+            training_number_epochs_to_within_ten_percent_of_max_accuracy = training_df.loc[best_training_loss - training_df['loss']<0.10]['epoch'].min()
+            training_number_epochs_to_within_three_percent_of_max_accuracy = training_df.loc[best_training_accuracy - training_df['accuracy']<0.03]['epoch'].min()
+            training_number_epochs_to_within_five_percent_of_max_accuracy = training_df.loc[best_training_accuracy - training_df['accuracy']<0.05]['epoch'].min()
+            training_number_epochs_to_within_ten_percent_of_max_accuracy = training_df.loc[best_training_accuracy - training_df['accuracy']<0.10]['epoch'].min()
+            
+            best_validation_accuracy = validation_df['mean_accuracy'].max()
+            best_validation_accuracy_epoch = validation_df.loc[best_validation_accuracy == validation_df['mean_accuracy']]['epoch'].min()
+            best_validation_loss = validation_df['mean_loss'].max()
+            best_validation_loss_epoch = validation_df.loc[best_validation_loss == validation_df['mean_loss']]['epoch'].min()
+            validation_number_epochs_to_within_three_percent_of_max_accuracy = validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.03]['epoch'].min()
+            validation_number_epochs_to_within_five_percent_of_max_accuracy = validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.05]['epoch'].min()
+            validation_number_epochs_to_within_ten_percent_of_max_accuracy = validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.10]['epoch'].min()
+            validation_number_epochs_to_within_three_percent_of_max_accuracy = validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.03]['epoch'].min()
+            validation_number_epochs_to_within_five_percent_of_max_accuracy = validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.05]['epoch'].min()
+            validation_number_epochs_to_within_ten_percent_of_max_accuracy = validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.10]['epoch'].min()
+
+            result_summary = {
+                'best_training_accuracy': best_training_accuracy,
+                'best_training_accuracy_epoch': best_training_accuracy_epoch,
+                'best_training_loss': best_training_loss,
+                'best_training_loss_epoch': best_training_loss_epoch,
+                'best_validation_accuracy': best_validation_accuracy,
+                'best_validation_accuracy_epoch': best_validation_accuracy_epoch,
+                'best_validation_loss': best_validation_loss,
+                'best_validation_loss_epoch': best_validation_loss_epoch,
+                'test_loss': test_loss,
+                'test_accuracy': test_acc,
+                'number_of_parameters': self.count_parameters(),
+                'training_number_epochs_to_within_three_percent_of_max_accuracy': training_number_epochs_to_within_three_percent_of_max_accuracy,
+                'training_number_epochs_to_within_five_percent_of_max_accuracy': training_number_epochs_to_within_five_percent_of_max_accuracy,
+                'training_number_epochs_to_within_ten_percent_of_max_accuracy': training_number_epochs_to_within_ten_percent_of_max_accuracy,
+                'training_number_epochs_to_within_three_percent_of_max_accuracy': training_number_epochs_to_within_three_percent_of_max_accuracy,
+                'training_number_epochs_to_within_five_percent_of_max_accuracy': training_number_epochs_to_within_five_percent_of_max_accuracy,
+                'training_number_epochs_to_within_ten_percent_of_max_accuracy': training_number_epochs_to_within_ten_percent_of_max_accuracy,
+                'validation_number_epochs_to_within_three_percent_of_max_accuracy': validation_number_epochs_to_within_three_percent_of_max_accuracy,
+                'validation_number_epochs_to_within_five_percent_of_max_accuracy': validation_number_epochs_to_within_five_percent_of_max_accuracy,
+                'validation_number_epochs_to_within_ten_percent_of_max_accuracy': validation_number_epochs_to_within_ten_percent_of_max_accuracy,
+                'validation_number_epochs_to_within_three_percent_of_max_accuracy': validation_number_epochs_to_within_three_percent_of_max_accuracy,
+                'validation_number_epochs_to_within_five_percent_of_max_accuracy': validation_number_epochs_to_within_five_percent_of_max_accuracy,
+                'validation_number_epochs_to_within_ten_percent_of_max_accuracy': validation_number_epochs_to_within_ten_percent_of_max_accuracy,
+            }
+            json.dump(result_summary, outfile)
+
     def train(self):
         print(f'This model has {self.count_parameters()} parameters.')
         saved_model_location = os.path.join(self.output_directory, 'best-performing-model.pt')
@@ -338,16 +412,11 @@ class EEAPClassifier():
                 torch.save(self.model.state_dict(), saved_model_location)
             print(f'\tTrain Loss: {train_loss:.8f} | Train Acc: {train_acc*100:.8f}%')
             print(f'\t Val. Loss: {valid_loss:.8f} |  Val. Acc: {valid_acc*100:.8f}%')
-        training_df = pd.DataFrame(self.training_epoch_accuracy_loss_triples, columns=['epoch','accuracy','loss'])
-        training_df.to_csv(os.path.join(self.output_directory, 'training_results.csv'))
-        self.validation_epoch_accuracy_loss_triples
-        validation_df.to_csv(os.path.join(self.output_directory, 'validation_results.csv'))
         self.model.load_state_dict(torch.load(saved_model_location))
-        test_loss, test_acc = self.testate()
+        test_loss, test_acc = self.test()
         print(f'\t Test Loss: {test_loss:.8f} |  Test Acc: {test_acc*100:.8f}%')
         os.remove(saved_model_location)
-        # @todo make charts visualizing the loss during this training process
-        # @todo make a JSON file summarizing the overall performance. Track best validation score, best training score, # epochs to within 3% of best validation score, # epochs to within 3% of best training score, testing scores, number of parameters
+        self.log_results(test_loss, test_acc)
 
 ##########
 # Driver #
