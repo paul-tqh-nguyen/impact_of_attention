@@ -28,13 +28,14 @@ File Organization:
 ###########
 
 import argparse
+from typing import Generator
 from misc_utilities import debug_on_error
 
 #################
 # Functionality #
 #################
 
-def model_hyperparameter_specification_generator():
+def model_hyperparameter_specification_generator() -> Generator[dict, None, None]:
     choices_for_final_representation = ['hidden', 'attention']
     choices_for_batch_size = [32]
     choices_for_max_vocab_size = [25_000]
@@ -67,7 +68,7 @@ def model_hyperparameter_specification_generator():
                                             'output_directory': output_directory,
                                         }
 
-def train_models():
+def train_models() -> None:
     import models
     number_of_epochs = 5
     output_size = 2
@@ -107,15 +108,15 @@ def train_models():
         classifier.train()
         print("\n\n")
 
-def generate_comparison_documents():
+def generate_comparison_documents() -> None:
     # @todo implement this
     raise NotImplementedError
 
-def deploy_comparison_documents():
+def deploy_comparison_documents() -> None:
     # @todo implement this
     raise NotImplementedError
 
-def end_to_end():
+def end_to_end() -> None:
     train_models()
     generate_comparison_documents()
     deploy_comparison_documents()
@@ -126,7 +127,7 @@ def end_to_end():
 ##########
 
 @debug_on_error
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-train-models', action='store_true', help="Instantiate the process of training all of the models we intend to compare.")
     parser.add_argument('-generate-comparison-documents', action='store_true', help="Instantiate the process of generating documents and visualizations comparing all of our models.")
