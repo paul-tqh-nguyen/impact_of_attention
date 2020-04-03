@@ -33,6 +33,7 @@ import spacy
 import json
 import pandas as pd
 from collections import OrderedDict
+from typing import Tuple, Iterable
 from misc_utilities import implies, timer, debug_on_error, tqdm_with_message
 from matplotlib import pyplot as plt
 
@@ -65,7 +66,7 @@ def dimensionality_from_pre_trained_embedding_specification(pre_trained_embeddin
     else:
         return int(pre_trained_embedding_specification.split('.')[-1][:-1])
 
-def discrete_accuracy(y_hat, y):
+def discrete_accuracy(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     y_hat_indices_of_max = y_hat.argmax(dim=1)
     number_of_correct_answers = (y_hat_indices_of_max == y).float().sum(dim=0)
     mean_accuracy = number_of_correct_answers / y.shape[0]
@@ -76,7 +77,7 @@ def discrete_accuracy(y_hat, y):
 ##########
 
 class AttentionLayers(nn.Module):
-    def __init__(self, encoding_hidden_size, attention_intermediate_size, number_of_attention_heads, dropout_probability):
+    def __init__(self, encoding_hidden_size: int, attention_intermediate_size: int, number_of_attention_heads: int, dropout_probability: float) -> None:
         super().__init__()
         self.encoding_hidden_size = encoding_hidden_size
         self.number_of_attention_heads = number_of_attention_heads
@@ -89,7 +90,7 @@ class AttentionLayers(nn.Module):
             ("softmax_layer", nn.Softmax(dim=0)),
         ]))
 
-    def forward(self, encoded_batch, text_lengths):
+    def forward(self, encoded_batch: torch.Tensor, text_lengths: torch.Tensor) -> torch.Tensor:
         max_sentence_length = encoded_batch.shape[1]
         batch_size = text_lengths.shape[0]
         assert tuple(encoded_batch.shape) == (batch_size, max_sentence_length, self.encoding_hidden_size*2)
@@ -118,7 +119,7 @@ class AttentionLayers(nn.Module):
         return attended_batch
 
 class EEAPNetwork(nn.Module):
-    def __init__(self, pad_idx, vocab_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability, final_representation):
+    def __init__(self, pad_idx: int, vocab_size: int, embedding_size: int, encoding_hidden_size: int, number_of_encoding_layers: int, attention_intermediate_size: int, number_of_attention_heads: int, output_size: int, dropout_probability: float, final_representation: str) -> None:
         super().__init__()
         assert final_representation in ['mean', 'final_output', 'initial_output', 'hidden', 'attention']
         self.final_representation = final_representation
@@ -145,7 +146,7 @@ class EEAPNetwork(nn.Module):
             ("softmax_layer", nn.Softmax(dim=1)),
         ]))
 
-    def forward(self, text_batch, text_lengths):
+    def forward(self, text_batch: torch.Tensor, text_lengths: torch.Tensor) -> torch.Tensor:
         if __debug__:
             max_sentence_length = max(text_lengths)
         batch_size = text_batch.shape[0]
@@ -204,7 +205,7 @@ class EEAPNetwork(nn.Module):
 
         prediction = self.prediction_layers(final_representation)
         assert tuple(prediction.shape) == (batch_size, OUTPUT_SIZE)
-        
+
         return prediction
 
 ###############
@@ -212,7 +213,7 @@ class EEAPNetwork(nn.Module):
 ###############
 
 class EEAPClassifier():
-    def __init__(self, number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability, final_representation, output_directory):
+    def __init__(self, number_of_epochs: int, batch_size: int, max_vocab_size: int, pre_trained_embedding_specification: str, encoding_hidden_size: int, number_of_encoding_layers: int, attention_intermediate_size: int, number_of_attention_heads: int, output_size: int, dropout_probability: float, final_representation: str, output_directory: str) -> None:
         self.nlp = spacy.load('en')
         self.output_directory = output_directory
         if not os.path.exists(self.output_directory):
@@ -225,7 +226,7 @@ class EEAPClassifier():
         self.training_epoch_accuracy_loss_triples = []
         self.validation_epoch_accuracy_loss_triples = []
     
-    def load_data(self, batch_size, pre_trained_embedding_specification, max_vocab_size):
+    def load_data(self, batch_size: int, pre_trained_embedding_specification: str, max_vocab_size: int) -> None:
         self.text_field = data.Field(tokenize = 'spacy', include_lengths = True, batch_first = True)
         self.label_field = data.LabelField(dtype = torch.long)
         
@@ -249,7 +250,7 @@ class EEAPClassifier():
         self.pad_idx = self.text_field.vocab.stoi[self.text_field.pad_token]
         self.unk_idx = self.text_field.vocab.stoi[self.text_field.unk_token]        
             
-    def initialize_model_and_optimizer(self, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability, final_representation):
+    def initialize_model_and_optimizer(self, pre_trained_embedding_specification: str, encoding_hidden_size: int, number_of_encoding_layers: int, attention_intermediate_size: int, number_of_attention_heads: int, output_size: int, dropout_probability: float, final_representation: str) -> None:
         embedding_size = dimensionality_from_pre_trained_embedding_specification(pre_trained_embedding_specification)
         self.model = EEAPNetwork(self.pad_idx,
                                  self.vocab_size,
@@ -270,10 +271,10 @@ class EEAPClassifier():
         self.loss_function = nn.CrossEntropyLoss()
         self.loss_function = self.loss_function.to(DEVICE)
         
-    def count_parameters(self):
+    def count_parameters(self) -> int:
         return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
     
-    def predict_sentiment(self, sentence): # @todo use this
+    def predict_sentiment(self, sentence: str) -> str: # @todo use this
         self.model.eval()
         tokenized = [token.text for token in self.nlp.tokenizer(sentence)]
         indexed = [self.text_field.vocab.stoi[t] for t in tokenized]
@@ -285,7 +286,7 @@ class EEAPClassifier():
         prediction = self.label_field.vocab.itos[prediction_as_index]
         return prediction
     
-    def train_one_epoch(self):
+    def train_one_epoch(self) -> Tuple[float,float]:
         epoch_loss = 0
         epoch_acc = 0
         self.model.train()
@@ -303,7 +304,7 @@ class EEAPClassifier():
             epoch_acc += acc.item()
         return epoch_loss / number_of_batches, epoch_acc / number_of_batches
         
-    def evaluate(self, iterator, is_validation):
+    def evaluate(self, iterator: Iterable, is_validation: bool) -> Tuple[float,float]:
         epoch_loss = 0
         epoch_acc = 0
         self.model.eval()
@@ -322,13 +323,13 @@ class EEAPClassifier():
             self.validation_epoch_accuracy_loss_triples.append((self.current_epoch+1, mean_accuracy, mean_loss))
         return mean_loss, mean_accuracy
 
-    def validate(self):
+    def validate(self) -> Tuple[float,float]:
         return self.evaluate(self.validation_iterator, True)
     
-    def test(self):
+    def test(self) -> Tuple[float,float]:
         return self.evaluate(self.test_iterator, False)
 
-    def log_results(self, test_loss, test_acc):
+    def log_results(self, test_loss: float, test_acc: float) -> None:
         training_df = pd.DataFrame(self.training_epoch_accuracy_loss_triples, columns=['epoch','accuracy','loss'])
         training_df.to_csv(os.path.join(self.output_directory, 'training_results.csv'), index=False)
         validation_df = pd.DataFrame(self.validation_epoch_accuracy_loss_triples, columns=['epoch','mean_accuracy','mean_loss'])
@@ -348,27 +349,27 @@ class EEAPClassifier():
         plt.savefig(os.path.join(self.output_directory, 'performance_over_time.png'))
         plt.close()
         with open(os.path.join(self.output_directory, 'result_summary.json'), 'w') as outfile:
-            best_training_accuracy = training_df['accuracy'].max()
-            best_training_accuracy_epoch = training_df.loc[best_training_accuracy == training_df['accuracy']]['epoch'].min()
-            best_training_loss = training_df['loss'].max()
-            best_training_loss_epoch = training_df.loc[best_training_loss == training_df['loss']]['epoch'].min()
-            training_number_epochs_to_within_three_percent_of_max_accuracy = training_df.loc[best_training_loss - training_df['loss']<0.03]['epoch'].min()
-            training_number_epochs_to_within_five_percent_of_max_accuracy = training_df.loc[best_training_loss - training_df['loss']<0.05]['epoch'].min()
-            training_number_epochs_to_within_ten_percent_of_max_accuracy = training_df.loc[best_training_loss - training_df['loss']<0.10]['epoch'].min()
-            training_number_epochs_to_within_three_percent_of_max_accuracy = training_df.loc[best_training_accuracy - training_df['accuracy']<0.03]['epoch'].min()
-            training_number_epochs_to_within_five_percent_of_max_accuracy = training_df.loc[best_training_accuracy - training_df['accuracy']<0.05]['epoch'].min()
-            training_number_epochs_to_within_ten_percent_of_max_accuracy = training_df.loc[best_training_accuracy - training_df['accuracy']<0.10]['epoch'].min()
+            best_training_accuracy = float(training_df['accuracy'].max())
+            best_training_accuracy_epoch = float(training_df.loc[best_training_accuracy == training_df['accuracy']]['epoch'].min())
+            best_training_loss = float(training_df['loss'].max())
+            best_training_loss_epoch = float(training_df.loc[best_training_loss == training_df['loss']]['epoch'].min())
+            training_number_epochs_to_within_three_percent_of_max_accuracy = float(training_df.loc[best_training_loss - training_df['loss']<0.03]['epoch'].min())
+            training_number_epochs_to_within_five_percent_of_max_accuracy = float(training_df.loc[best_training_loss - training_df['loss']<0.05]['epoch'].min())
+            training_number_epochs_to_within_ten_percent_of_max_accuracy = float(training_df.loc[best_training_loss - training_df['loss']<0.10]['epoch'].min())
+            training_number_epochs_to_within_three_percent_of_max_accuracy = float(training_df.loc[best_training_accuracy - training_df['accuracy']<0.03]['epoch'].min())
+            training_number_epochs_to_within_five_percent_of_max_accuracy = float(training_df.loc[best_training_accuracy - training_df['accuracy']<0.05]['epoch'].min())
+            training_number_epochs_to_within_ten_percent_of_max_accuracy = float(training_df.loc[best_training_accuracy - training_df['accuracy']<0.10]['epoch'].min())
             
-            best_validation_accuracy = validation_df['mean_accuracy'].max()
-            best_validation_accuracy_epoch = validation_df.loc[best_validation_accuracy == validation_df['mean_accuracy']]['epoch'].min()
-            best_validation_loss = validation_df['mean_loss'].max()
-            best_validation_loss_epoch = validation_df.loc[best_validation_loss == validation_df['mean_loss']]['epoch'].min()
-            validation_number_epochs_to_within_three_percent_of_max_accuracy = validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.03]['epoch'].min()
-            validation_number_epochs_to_within_five_percent_of_max_accuracy = validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.05]['epoch'].min()
-            validation_number_epochs_to_within_ten_percent_of_max_accuracy = validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.10]['epoch'].min()
-            validation_number_epochs_to_within_three_percent_of_max_accuracy = validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.03]['epoch'].min()
-            validation_number_epochs_to_within_five_percent_of_max_accuracy = validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.05]['epoch'].min()
-            validation_number_epochs_to_within_ten_percent_of_max_accuracy = validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.10]['epoch'].min()
+            best_validation_accuracy = float(validation_df['mean_accuracy'].max())
+            best_validation_accuracy_epoch = float(validation_df.loc[best_validation_accuracy == validation_df['mean_accuracy']]['epoch'].min())
+            best_validation_loss = float(validation_df['mean_loss'].max())
+            best_validation_loss_epoch = float(validation_df.loc[best_validation_loss == validation_df['mean_loss']]['epoch'].min())
+            validation_number_epochs_to_within_three_percent_of_max_accuracy = float(validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.03]['epoch'].min())
+            validation_number_epochs_to_within_five_percent_of_max_accuracy = float(validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.05]['epoch'].min())
+            validation_number_epochs_to_within_ten_percent_of_max_accuracy = float(validation_df.loc[best_validation_loss - validation_df['mean_loss']<0.10]['epoch'].min())
+            validation_number_epochs_to_within_three_percent_of_max_accuracy = float(validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.03]['epoch'].min())
+            validation_number_epochs_to_within_five_percent_of_max_accuracy = float(validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.05]['epoch'].min())
+            validation_number_epochs_to_within_ten_percent_of_max_accuracy = float(validation_df.loc[best_validation_accuracy - validation_df['mean_accuracy']<0.10]['epoch'].min())
 
             result_summary = {
                 'best_training_accuracy': best_training_accuracy,
@@ -396,8 +397,9 @@ class EEAPClassifier():
                 'validation_number_epochs_to_within_ten_percent_of_max_accuracy': validation_number_epochs_to_within_ten_percent_of_max_accuracy,
             }
             json.dump(result_summary, outfile)
+        return
 
-    def train(self):
+    def train(self) -> None:
         print(f'This model has {self.count_parameters()} parameters.')
         saved_model_location = os.path.join(self.output_directory, 'best-performing-model.pt')
         print(f'Best performing models will be saved at {saved_model_location}')
@@ -417,6 +419,7 @@ class EEAPClassifier():
         print(f'\t Test Loss: {test_loss:.8f} |  Test Acc: {test_acc*100:.8f}%')
         os.remove(saved_model_location)
         self.log_results(test_loss, test_acc)
+        return
 
 ##########
 # Driver #
