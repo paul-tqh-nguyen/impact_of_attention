@@ -455,7 +455,7 @@ class EEAPClassifier():
         print(f'This model has {self.count_parameters()} parameters.')
         saved_model_location = os.path.join(self.output_directory, 'best-performing-model.pt')
         print(f'Best performing models will be saved at {saved_model_location}')
-        print(f'Starting training on the {str.upper(DEVICE)}')
+        print(f'Starting training on the {str.upper(str(DEVICE))}')
         for epoch_index in range(self.number_of_epochs):
             self.current_epoch = epoch_index
             with timer(section_name=f"Epoch {epoch_index}"):
