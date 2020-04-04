@@ -351,7 +351,7 @@ class EEAPClassifier():
         self.model.eval()
         number_of_batches = len(iterator)
         with torch.no_grad():
-            for batch in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Validation Accuracy {epoch_acc/(index+1)*100:.8f}%', total=number_of_batches, bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
+            for batch in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'{"Validation" if is_validation else "Testing"} Accuracy {epoch_acc/(index+1)*100:.8f}%', total=number_of_batches, bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
                 text, text_lengths = batch.text
                 predictions = self.model(text, text_lengths).squeeze(1)
                 loss = self.loss_function(predictions, batch.label)
