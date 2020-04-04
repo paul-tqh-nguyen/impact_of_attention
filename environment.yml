@@ -1,0 +1,10 @@
+name: impact
+dependencies:
+  - python=3.7
+  - pytorch
+  - pytorch::torchtext
+  - powerai::sentencepiece
+  - spacy
+  - pandas
+  - matplotlib
+  - tqdm
