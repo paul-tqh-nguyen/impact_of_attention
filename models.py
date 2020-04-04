@@ -376,7 +376,7 @@ class EEAPClassifier():
         validation_df = pd.DataFrame(self.validation_epoch_accuracy_loss_triples, columns=['epoch','mean_accuracy','mean_loss'])
         validation_df.to_csv(os.path.join(self.output_directory, 'validation_results.csv'), index=False)
         if _ENABLE_MODEL_CHART_GENERATION:
-        plt.figure(figsize=(20.0,10.0))
+            plt.figure(figsize=(20.0,10.0))
             plt.grid()
             plt.xlim(0.0, self.number_of_epochs)
             plt.ylim(0.0, 1.0)
