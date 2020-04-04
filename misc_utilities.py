@@ -52,14 +52,14 @@ def timer(section_name=None, exitCallback=None):
 def debug_on_error(func):
     def func_wrapped(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except Exception as err:
             print(f'Exception Class: {type(err)}')
             print(f'Exception Args: {err.args}')
             extype, value, tb = sys.exc_info()
             traceback.print_exc()
             pdb.post_mortem(tb)
-    return func_wrapped
+    return func_wrapped if __debug__ else func
 
 def _dummy_tqdm_message_func(index: int):
     return ''
