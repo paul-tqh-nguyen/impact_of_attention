@@ -4,11 +4,9 @@
 """
 
 This file contains the main driver for our functionality to:
-* Train all of our models.
-* Evaluate all of our models on test data.
+* Train models.
 * Generate documents comparing the performance of our models.
 * Deploy the documents comparing the performance of our models to GitHub Pages.
-* End-to-end performance of all of the above.
 
 Owner : paul-tqh-nguyen
 
@@ -28,6 +26,9 @@ File Organization:
 ###########
 
 import argparse
+import random
+import json
+import os
 from typing import Generator
 from misc_utilities import debug_on_error
 
@@ -35,46 +36,75 @@ from misc_utilities import debug_on_error
 # Functionality #
 #################
 
-def model_hyperparameter_specification_generator() -> Generator[dict, None, None]:
+def random_model_hyperparameter_specification() -> dict:
+    
     choices_for_final_representation = ['hidden', 'attention']
+    final_representation = random.choice(choices_for_final_representation)
+    
     choices_for_batch_size = [32]
+    batch_size = random.choice(choices_for_batch_size)
+    
     choices_for_max_vocab_size = [25_000]
+    max_vocab_size = random.choice(choices_for_max_vocab_size)
+    
     choices_for_pre_trained_embedding_specification = ['charngram.100d', 'fasttext.en.300d', 'fasttext.simple.300d', 'glove.42B.300d', 'glove.840B.300d', 'glove.twitter.27B.25d', 'glove.twitter.27B.50d', 'glove.twitter.27B.100d', 'glove.twitter.27B.200d', 'glove.6B.50d', 'glove.6B.100d', 'glove.6B.200d', 'glove.6B.300d']
+    pre_trained_embedding_specification = random.choice(choices_for_pre_trained_embedding_specification)
+    
     choices_for_encoding_hidden_size = [128, 256]
+    encoding_hidden_size = random.choice(choices_for_encoding_hidden_size)
+    
     choices_for_number_of_encoding_layers = [1, 2]
+    number_of_encoding_layers = random.choice(choices_for_number_of_encoding_layers)
+    
     choices_for_dropout_probability = [0.5]
-    for final_representation in choices_for_final_representation:
-        choices_for_number_of_attention_heads = [1, 2, 32] if final_representation == 'attention' else [1]
-        choices_for_attention_intermediate_size = [8, 32] if final_representation == 'attention' else [0]
-        for batch_size in choices_for_batch_size:
-            for max_vocab_size in choices_for_max_vocab_size:
-                for pre_trained_embedding_specification in choices_for_pre_trained_embedding_specification:
-                    for encoding_hidden_size in choices_for_encoding_hidden_size:
-                        for number_of_encoding_layers in choices_for_number_of_encoding_layers:
-                            for attention_intermediate_size in choices_for_attention_intermediate_size:
-                                for number_of_attention_heads in choices_for_number_of_attention_heads:
-                                    for dropout_probability in choices_for_dropout_probability:
-                                        output_directory = f"./final_representation_{final_representation}_batch_size_{batch_size}_max_vocab_size_{max_vocab_size}_pre_trained_embedding_specification_{pre_trained_embedding_specification}_encoding_hidden_size_{encoding_hidden_size}_number_of_encoding_layers_{number_of_encoding_layers}_attention_intermediate_size_{attention_intermediate_size}_number_of_attention_heads_{number_of_attention_heads}_dropout_probability_{dropout_probability}/"
-                                        yield {
-                                            'final_representation': final_representation,
-                                            'batch_size': batch_size,
-                                            'max_vocab_size': max_vocab_size,
-                                            'pre_trained_embedding_specification': pre_trained_embedding_specification,
-                                            'encoding_hidden_size': encoding_hidden_size,
-                                            'number_of_encoding_layers': number_of_encoding_layers,
-                                            'attention_intermediate_size': attention_intermediate_size,
-                                            'number_of_attention_heads': number_of_attention_heads,
-                                            'dropout_probability': dropout_probability,
-                                            'output_directory': output_directory,
-                                        }
+    dropout_probability = random.choice(choices_for_dropout_probability)
+    
+    choices_for_number_of_attention_heads = [1, 2, 32] if final_representation == 'attention' else [1]
+    number_of_attention_heads = random.choice(choices_for_number_of_attention_heads)
+    
+    choices_for_attention_intermediate_size = [8, 32] if final_representation == 'attention' else [0]
+    attention_intermediate_size = random.choice(choices_for_attention_intermediate_size)
+    
+    output_directory = f"./results/final_representation_{final_representation}_batch_size_{batch_size}_max_vocab_size_{max_vocab_size}_pre_trained_embedding_specification_{pre_trained_embedding_specification}_encoding_hidden_size_{encoding_hidden_size}_number_of_encoding_layers_{number_of_encoding_layers}_attention_intermediate_size_{attention_intermediate_size}_number_of_attention_heads_{number_of_attention_heads}_dropout_probability_{dropout_probability}/"
+    
+    return {
+        'final_representation': final_representation,
+        'batch_size': batch_size,
+        'max_vocab_size': max_vocab_size,
+        'pre_trained_embedding_specification': pre_trained_embedding_specification,
+        'encoding_hidden_size': encoding_hidden_size,
+        'number_of_encoding_layers': number_of_encoding_layers,
+        'attention_intermediate_size': attention_intermediate_size,
+        'number_of_attention_heads': number_of_attention_heads,
+        'dropout_probability': dropout_probability,
+        'output_directory': output_directory,
+    }
+
+def model_hyperparameter_specification_has_been_evaluated(model_hyperparameter_specification: dict) -> bool:
+    output_directory = model_hyperparameter_specification['output_directory']
+    if os.path.isdir(output_directory):
+        result_summary_json_file_location = os.path.join(output_directory,'result_summary.json')
+        if os.path.isfile(result_summary_json_file_location):
+            with open(result_summary_json_file_location, 'r') as result_summary_json_string:
+                result_summary = json.load(result_summary_json_string)
+                if models.EXPECTED_RESULT_SUMMARY_KEY_WORDS == set(result_summary.keys()):
+                    return True
+    return False
+
+def unevaluated_model_hyperparameter_specification() -> dict:
+    model_hyperparameter_specification = random_model_hyperparameter_specification()
+    has_already_been_evaluated = model_hyperparameter_specification_has_been_evaluated(model_hyperparameter_specification)
+    while has_already_been_evaluated:
+        model_hyperparameter_specification = random_model_hyperparameter_specification()
+        has_already_been_evaluated = model_hyperparameter_specification_has_been_evaluated(model_hyperparameter_specification)
+    return model_hyperparameter_specification
 
 def train_models() -> None:
     import models
     number_of_epochs = 5
     output_size = 2
-    model_hyperparameter_specifications = list(model_hyperparameter_specification_generator())
-    number_of_model_hyperparameter_specifications = len(model_hyperparameter_specifications)
-    for model_index, model_hyperparameter_specification in enumerate(model_hyperparameter_specifications):
+    while True:
+        model_hyperparameter_specification = unevaluated_model_hyperparameter_specification()
         batch_size = model_hyperparameter_specification['batch_size']
         max_vocab_size = model_hyperparameter_specification['max_vocab_size']
         pre_trained_embedding_specification = model_hyperparameter_specification['pre_trained_embedding_specification']
@@ -85,7 +115,6 @@ def train_models() -> None:
         dropout_probability = model_hyperparameter_specification['dropout_probability']
         final_representation = model_hyperparameter_specification['final_representation']
         output_directory = model_hyperparameter_specification['output_directory']
-        print(f"Working on model {model_index}/{number_of_model_hyperparameter_specifications}")
         print()
         print(f"Model hyperparameters are:")
         print(f'        number_of_epochs: {number_of_epochs}')
@@ -107,6 +136,7 @@ def train_models() -> None:
         classifier = models.EEAPClassifier(number_of_epochs, batch_size, max_vocab_size, pre_trained_embedding_specification, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability, final_representation, output_directory)
         classifier.train()
         print("\n\n")
+    return
 
 def generate_comparison_documents() -> None:
     # @todo implement this
@@ -116,12 +146,6 @@ def deploy_comparison_documents() -> None:
     # @todo implement this
     raise NotImplementedError
 
-def end_to_end() -> None:
-    train_models()
-    generate_comparison_documents()
-    deploy_comparison_documents()
-    return
-
 ##########
 # Driver #
 ##########
@@ -129,26 +153,21 @@ def end_to_end() -> None:
 @debug_on_error
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('-train-models', action='store_true', help="Instantiate the process of training all of the models we intend to compare.")
-    parser.add_argument('-generate-comparison-documents', action='store_true', help="Instantiate the process of generating documents and visualizations comparing all of our models.")
-    parser.add_argument('-deploy-comparison-documents', action='store_true', help="Deploy the documents comparing the performance of our models.") # @todo add the actual URL here
-    parser.add_argument('-end-to-end', action='store_true', help="Train our models, evaluate our models, generate documents comparing them, and deploy those documents.") # @todo add the actual URL here
+    parser.add_argument('-train-models', action='store_true', help=" Instantiate the process of training models we intend to compare. This is intended to run indefinitely as the number of models is explosive.")
+    parser.add_argument('-generate-comparison-documents', action='store_true', help=" Instantiate the process of generating documents and visualizations comparing all of our models.")
+    parser.add_argument('-deploy-comparison-documents', action='store_true', help=" Deploy the documents comparing the performance of our models.") # @todo add the actual URL here
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,vars(args).values()))
     if number_of_args_specified == 0:
         parser.print_help()
     elif number_of_args_specified > 1:
-        print("Please only specify one argument.")
+        print("Please specify exactly one action.")
     elif args.train_models:
         train_models()
-    elif args.evaluate_models:
-        evaluate_models()
     elif args.generate_comparison_documents:
         generate_comparison_documents()
     elif args.deploy_comparison_documents:
         deploy_comparison_documents()
-    elif args.end_to_end:
-        end_to_end()
     else:
         raise Exception("Unexpected args received.")
         

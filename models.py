@@ -54,6 +54,41 @@ OUTPUT_SIZE = 2
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
+EXPECTED_RESULT_SUMMARY_KEY_WORDS = {'number_of_epochs',
+                                     'batch_size',
+                                     'vocab_size',
+                                     'pre_trained_embedding_specification',
+                                     'encoding_hidden_size',
+                                     'number_of_encoding_layers',
+                                     'attention_intermediate_size',
+                                     'number_of_attention_heads',
+                                     'dropout_probability',
+                                     'final_representation',
+                                     'best_training_accuracy',
+                                     'best_training_accuracy_epoch',
+                                     'best_training_loss',
+                                     'best_training_loss_epoch',
+                                     'best_validation_accuracy',
+                                     'best_validation_accuracy_epoch',
+                                     'best_validation_loss',
+                                     'best_validation_loss_epoch',
+                                     'test_loss',
+                                     'test_accuracy',
+                                     'number_of_parameters',
+                                     'training_number_epochs_to_within_three_percent_of_max_accuracy',
+                                     'training_number_epochs_to_within_five_percent_of_max_accuracy',
+                                     'training_number_epochs_to_within_ten_percent_of_max_accuracy',
+                                     'training_number_epochs_to_within_three_percent_of_max_accuracy',
+                                     'training_number_epochs_to_within_five_percent_of_max_accuracy',
+                                     'training_number_epochs_to_within_ten_percent_of_max_accuracy',
+                                     'validation_number_epochs_to_within_three_percent_of_max_accuracy',
+                                     'validation_number_epochs_to_within_five_percent_of_max_accuracy',
+                                     'validation_number_epochs_to_within_ten_percent_of_max_accuracy',
+                                     'validation_number_epochs_to_within_three_percent_of_max_accuracy',
+                                     'validation_number_epochs_to_within_five_percent_of_max_accuracy',
+                                     'validation_number_epochs_to_within_ten_percent_of_max_accuracy',
+}
+
 ###########################
 # Domain Specific Helpers #
 ###########################
@@ -412,6 +447,7 @@ class EEAPClassifier():
                 'validation_number_epochs_to_within_five_percent_of_max_accuracy': validation_number_epochs_to_within_five_percent_of_max_accuracy,
                 'validation_number_epochs_to_within_ten_percent_of_max_accuracy': validation_number_epochs_to_within_ten_percent_of_max_accuracy,
             }
+            assert EXPECTED_RESULT_SUMMARY_KEY_WORDS == set(result_summary.keys())
             json.dump(result_summary, outfile)
         return
 
@@ -419,7 +455,7 @@ class EEAPClassifier():
         print(f'This model has {self.count_parameters()} parameters.')
         saved_model_location = os.path.join(self.output_directory, 'best-performing-model.pt')
         print(f'Best performing models will be saved at {saved_model_location}')
-        print(f'Starting training')
+        print(f'Starting training on the {str.upper(DEVICE)}')
         for epoch_index in range(self.number_of_epochs):
             self.current_epoch = epoch_index
             with timer(section_name=f"Epoch {epoch_index}"):
