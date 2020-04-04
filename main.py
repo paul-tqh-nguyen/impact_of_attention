@@ -65,7 +65,7 @@ def random_model_hyperparameter_specification() -> dict:
     choices_for_attention_intermediate_size = [8, 32] if final_representation == 'attention' else [0]
     attention_intermediate_size = random.choice(choices_for_attention_intermediate_size)
     
-    output_directory = f"./results/final_representation_{final_representation}_batch_size_{batch_size}_max_vocab_size_{max_vocab_size}_pre_trained_embedding_specification_{pre_trained_embedding_specification}_encoding_hidden_size_{encoding_hidden_size}_number_of_encoding_layers_{number_of_encoding_layers}_attention_intermediate_size_{attention_intermediate_size}_number_of_attention_heads_{number_of_attention_heads}_dropout_probability_{dropout_probability}/"
+    output_directory = f"./results/final_repr_{final_representation}_batch_{batch_size}_max_vocab_{max_vocab_size}_embedding_spec_{pre_trained_embedding_specification}_encoding_size_{encoding_hidden_size}_num_encoding_{number_of_encoding_layers}_attn_inter_size_{attention_intermediate_size}_num_attn_heads_{number_of_attention_heads}_dropout_{dropout_probability}/"
     
     return {
         'final_representation': final_representation,
@@ -81,6 +81,7 @@ def random_model_hyperparameter_specification() -> dict:
     }
 
 def model_hyperparameter_specification_has_been_evaluated(model_hyperparameter_specification: dict) -> bool:
+    import models
     output_directory = model_hyperparameter_specification['output_directory']
     if os.path.isdir(output_directory):
         result_summary_json_file_location = os.path.join(output_directory,'result_summary.json')
