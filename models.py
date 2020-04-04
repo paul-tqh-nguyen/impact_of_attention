@@ -51,6 +51,8 @@ SEED = 1234
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 OUTPUT_SIZE = 2
 
+_ENABLE_MODEL_CHART_GENERATION = False
+
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
@@ -373,22 +375,24 @@ class EEAPClassifier():
         training_df.to_csv(os.path.join(self.output_directory, 'training_results.csv'), index=False)
         validation_df = pd.DataFrame(self.validation_epoch_accuracy_loss_triples, columns=['epoch','mean_accuracy','mean_loss'])
         validation_df.to_csv(os.path.join(self.output_directory, 'validation_results.csv'), index=False)
+        if _ENABLE_MODEL_CHART_GENERATION:
         plt.figure(figsize=(20.0,10.0))
-        plt.grid()
-        plt.xlim(0.0, self.number_of_epochs)
-        plt.ylim(0.0, 1.0)
-        plt.plot(training_df['epoch'], training_df['accuracy'], label='Training Accuracy')
-        plt.plot(training_df['epoch'], training_df['loss'], label='Training Loss')
-        plt.plot(validation_df['epoch'], validation_df['mean_accuracy'], label='Validation Mean Accuracy')
-        plt.plot(validation_df['epoch'], validation_df['mean_loss'], label='Validation Mean  Loss')
-        plt.title('Training & Validation Performance')
-        plt.ylabel('Loss / Accuracy')
-        plt.xlabel('Epoch')
-        plt.legend(loc='upper right')
-        plt.ylim(bottom=0)
-        plt.xlim(left=0)
-        plt.savefig(os.path.join(self.output_directory, 'performance_over_time.png'))
-        plt.close()
+            plt.grid()
+            plt.xlim(0.0, self.number_of_epochs)
+            plt.ylim(0.0, 1.0)
+            plt.plot(training_df['epoch'], training_df['accuracy'], label='Training Accuracy')
+            plt.plot(training_df['epoch'], training_df['loss'], label='Training Loss')
+            plt.plot(validation_df['epoch'], validation_df['mean_accuracy'], label='Validation Mean Accuracy')
+            plt.plot(validation_df['epoch'], validation_df['mean_loss'], label='Validation Mean  Loss')
+            plt.title('Training & Validation Performance')
+            plt.ylabel('Loss / Accuracy')
+            plt.xlabel('Epoch')
+            plt.legend(loc='upper right')
+            plt.ylim(bottom=0)
+            plt.xlim(left=0)
+            plt.savefig(os.path.join(self.output_directory, 'performance_over_time.png'))
+            plt.close()
+            
         with open(os.path.join(self.output_directory, 'result_summary.json'), 'w') as outfile:
             best_training_accuracy = float(training_df['accuracy'].max())
             best_training_accuracy_epoch = float(training_df.loc[best_training_accuracy == training_df['accuracy']]['epoch'].min())
