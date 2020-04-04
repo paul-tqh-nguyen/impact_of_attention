@@ -47,7 +47,7 @@ def random_model_hyperparameter_specification() -> dict:
     choices_for_max_vocab_size = [25_000]
     max_vocab_size = random.choice(choices_for_max_vocab_size)
     
-    choices_for_pre_trained_embedding_specification = ['charngram.100d', 'fasttext.en.300d', 'glove.42B.300d', 'glove.840B.300d', 'glove.twitter.27B.25d', 'glove.twitter.27B.50d', 'glove.twitter.27B.100d', 'glove.twitter.27B.200d', 'glove.6B.50d', 'glove.6B.100d', 'glove.6B.200d', 'glove.6B.300d'] # @todo 'fasttext.simple.300d' download isn't working right now.
+    choices_for_pre_trained_embedding_specification = ['charngram.100d', 'fasttext.en.300d', 'fasttext.simple.300d', 'glove.42B.300d', 'glove.840B.300d', 'glove.twitter.27B.25d', 'glove.twitter.27B.50d', 'glove.twitter.27B.100d', 'glove.twitter.27B.200d', 'glove.6B.50d', 'glove.6B.100d', 'glove.6B.200d', 'glove.6B.300d']
     pre_trained_embedding_specification = random.choice(choices_for_pre_trained_embedding_specification)
     
     choices_for_encoding_hidden_size = [128, 256]
