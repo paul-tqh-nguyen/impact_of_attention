@@ -41,7 +41,7 @@ def random_model_hyperparameter_specification() -> dict:
     choices_for_final_representation = ['hidden', 'attention']
     final_representation = random.choice(choices_for_final_representation)
     
-    choices_for_batch_size = [1, 32]
+    choices_for_batch_size = [32]
     batch_size = random.choice(choices_for_batch_size)
     
     choices_for_max_vocab_size = [25_000, 50_000]
