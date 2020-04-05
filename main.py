@@ -41,22 +41,22 @@ def random_model_hyperparameter_specification() -> dict:
     choices_for_final_representation = ['hidden', 'attention']
     final_representation = random.choice(choices_for_final_representation)
     
-    choices_for_batch_size = [32]
+    choices_for_batch_size = [1, 32]
     batch_size = random.choice(choices_for_batch_size)
     
-    choices_for_max_vocab_size = [25_000]
+    choices_for_max_vocab_size = [25_000, 50_000]
     max_vocab_size = random.choice(choices_for_max_vocab_size)
     
     choices_for_pre_trained_embedding_specification = ['charngram.100d', 'fasttext.en.300d', 'fasttext.simple.300d', 'glove.42B.300d', 'glove.840B.300d', 'glove.twitter.27B.25d', 'glove.twitter.27B.50d', 'glove.twitter.27B.100d', 'glove.twitter.27B.200d', 'glove.6B.50d', 'glove.6B.100d', 'glove.6B.200d', 'glove.6B.300d']
     pre_trained_embedding_specification = random.choice(choices_for_pre_trained_embedding_specification)
     
-    choices_for_encoding_hidden_size = [128, 256]
+    choices_for_encoding_hidden_size = [128, 256, 512]
     encoding_hidden_size = random.choice(choices_for_encoding_hidden_size)
     
     choices_for_number_of_encoding_layers = [1, 2]
     number_of_encoding_layers = random.choice(choices_for_number_of_encoding_layers)
     
-    choices_for_dropout_probability = [0.5]
+    choices_for_dropout_probability = [0.0, 0.25, 0.5]
     dropout_probability = random.choice(choices_for_dropout_probability)
     
     choices_for_number_of_attention_heads = [1, 2, 32] if final_representation == 'attention' else [1]
