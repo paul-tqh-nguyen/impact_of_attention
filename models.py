@@ -47,13 +47,13 @@ from torchtext import datasets
 # Misc. Globals & Global State Initializations #
 ################################################
 
-SEED = 1234
+#SEED = 1234
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 OUTPUT_SIZE = 2
 
 _ENABLE_MODEL_CHART_GENERATION = False
 
-torch.manual_seed(SEED)
+#torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
 EXPECTED_RESULT_SUMMARY_KEY_WORDS = {'number_of_epochs',
@@ -272,7 +272,7 @@ class EEAPClassifier():
         self.label_field = data.LabelField(dtype = torch.long)
         
         train_data, test_data = datasets.IMDB.splits(self.text_field, self.label_field)
-        train_data, valid_data = train_data.split(random_state = random.seed(SEED))
+        train_data, valid_data = train_data.split() # train_data.split(random_state = random.seed(SEED))
         
         self.text_field.build_vocab(train_data, max_size = max_vocab_size, vectors = pre_trained_embedding_specification, unk_init = torch.Tensor.normal_)
         self.label_field.build_vocab(train_data)
