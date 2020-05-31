@@ -140,12 +140,9 @@ def train_models() -> None:
     return
 
 def generate_comparison_documents() -> None:
-    # @todo implement this
-    raise NotImplementedError
-
-def deploy_comparison_documents() -> None:
-    # @todo implement this
-    raise NotImplementedError
+    from data import process_data
+    process_data.process_data()
+    return 
 
 ##########
 # Driver #
@@ -156,7 +153,6 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-train-models', action='store_true', help=" Instantiate the process of training models we intend to compare. This is intended to run indefinitely as the number of models is explosive.")
     parser.add_argument('-generate-comparison-documents', action='store_true', help=" Instantiate the process of generating documents and visualizations comparing all of our models.")
-    parser.add_argument('-deploy-comparison-documents', action='store_true', help=" Deploy the documents comparing the performance of our models.") # @todo add the actual URL here
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,vars(args).values()))
     if number_of_args_specified == 0:

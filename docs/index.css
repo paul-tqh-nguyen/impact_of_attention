@@ -14,7 +14,7 @@ header {
     text-align: center;
 }
 
-.blue-background {
+.stone-background {
     color: #fff;
     background-color: #5498ba;
     background-image: url(contours.png), url(gridlines.png), url(stone.png);
@@ -25,7 +25,7 @@ header {
 }
 
 
-.blue-background h3 {
+.stone-background h3 {
     color: #fff;
 }
 
