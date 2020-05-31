@@ -1,0 +1,100 @@
+
+body {
+    font-family: 'Julius Sans One', sans-serif;
+    padding: 0px;
+    margin: 0px;
+}
+
+h1 {
+    font-size: 3em;
+}
+
+header {
+    width: 100%;
+    text-align: center;
+}
+
+.blue-background {
+    color: #fff;
+    background-color: #5498ba;
+    background-image: url(contours.png), url(gridlines.png), url(bamboo.png);
+    background-attachment: scroll, scroll, fixed;
+    background-position: top left, top left, center left;
+    background-repeat: repeat, repeat, no-repeat;
+    background-size: auto, auto, cover;
+}
+
+
+.blue-background h3 {
+    color: #fff;
+}
+
+header p {
+    font-size: 1.5em;
+}
+
+.vertical-padding {
+    padding-top: 20px;
+    padding-bottom: 40px;
+}
+
+.horizontal-padding {
+    margin-left: 40px;
+    margin-right: 40px;
+}
+
+section {
+    width: 100%;
+}
+
+h3 {
+    margin: 2em 0px 0px 0px;
+    color: #2e484c;
+    font-family: 'Julius Sans One', sans-serif;
+    font-size: 1.8em;
+    font-weight: normal;
+    text-transform: uppercase;
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+}
+
+p {
+    font-family: 'Libre Baskerville', sans-serif;
+    font-size: 0.9em;
+    margin: 0.75em 0;
+    line-height: 2;
+    display: block;
+    margin-block-start: 0em;
+    margin-block-end: 0em;
+}
+
+card a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.card-text {
+    border: 0.1em solid #fff;
+    border-radius: 15px;
+    box-shadow: 0px 20px 20px -20px black;
+    font-size: 1.5em;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    padding-right: 10px;
+    padding-left: 10px;
+    text-align: center;
+    transition: backdrop-filter 0.5s, all 0.5s;
+    backdrop-filter: grayscale(50%) brightness(80%);
+}
+
+.card-text:active {
+    transform: translateY(10px);
+    box-shadow: 0px 0px 0px 0px black;
+}
+
+.card-text:hover {
+    backdrop-filter: grayscale(100%) brightness(40%);
+}
