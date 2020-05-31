@@ -17,11 +17,11 @@ header {
 .blue-background {
     color: #fff;
     background-color: #5498ba;
-    background-image: url(contours.png), url(gridlines.png), url(bamboo.png);
+    background-image: url(contours.png), url(gridlines.png), url(stone.png);
     background-attachment: scroll, scroll, fixed;
-    background-position: top left, top left, center left;
+    background-position: top left, top left, top left;
     background-repeat: repeat, repeat, no-repeat;
-    background-size: auto, auto, cover;
+    background-size: auto, auto, 100% 100%;
 }
 
 
