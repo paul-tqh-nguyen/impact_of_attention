@@ -37,7 +37,7 @@ def get_sorted_result_dicts() -> Tuple[List[dict],List[dict]]:
     attention_result_dicts: List[dict] = []
     plain_rnn_result_dicts: List[dict] = []
     result_dirs = os.listdir(RESULTS_DIR)
-    for result_base_dir in result_dirs:
+    for result_base_dir in tqdm_with_message(result_dirs, post_yield_message_func = lambda index: f'Processing model results...'):
         result_dir = os.path.join(RESULTS_DIR, result_base_dir)
         result_summary_json_file_location = os.path.join(result_dir, 'result_summary.json')
         if {'result_summary.json', 'training_results.csv', 'validation_results.csv'}.issubset(os.listdir(result_dir)):
@@ -47,8 +47,26 @@ def get_sorted_result_dicts() -> Tuple[List[dict],List[dict]]:
                 validation_progress_csv_location = os.path.join(result_dir, 'validation_results.csv')
                 validation_progress_df = pd.read_csv(validation_progress_csv_location)
                 result_dict = json.loads(file_handle.read())
+                result_dict['result_dir'] = result_dir
                 result_dict['training_progress'] = json.loads(training_progress_df.to_json(orient='records'))
                 result_dict['validation_progress'] = json.loads(validation_progress_df.to_json(orient='records'))
+                for key in {
+                        'best_training_accuracy',
+                        'best_training_accuracy_epoch',
+                        'best_training_loss',
+                        'best_training_loss_epoch',
+                        'best_validation_accuracy',
+                        'best_validation_accuracy_epoch',
+                        'best_validation_loss',
+                        'best_validation_loss_epoch',
+                        'training_number_epochs_to_within_three_percent_of_max_accuracy',
+                        'training_number_epochs_to_within_five_percent_of_max_accuracy',
+                        'training_number_epochs_to_within_ten_percent_of_max_accuracy',
+                        'validation_number_epochs_to_within_three_percent_of_max_accuracy',
+                        'validation_number_epochs_to_within_five_percent_of_max_accuracy',
+                        'validation_number_epochs_to_within_ten_percent_of_max_accuracy',
+                }:
+                    result_dict.pop(key, None)
                 is_attention_result_dict = result_dict['attention_intermediate_size'] > 0
                 if is_attention_result_dict:
                     attention_result_dicts.append(result_dict)
@@ -71,12 +89,14 @@ def generate_accuracy_vs_number_of_parameters_json_file(attention_result_dicts_s
         accuracy_vs_number_of_parameters_dict = {
             'attention': [
                 {
+                    'test_loss': result_dict['test_loss'],
                     'test_accuracy': result_dict['test_accuracy'],
                     'number_of_parameters': result_dict['number_of_parameters'],
                 }
                           for result_dict in attention_result_dicts_sorted],
             'plain_rnn': [
                 {
+                    'test_loss': result_dict['test_loss'],
                     'test_accuracy': result_dict['test_accuracy'],
                     'number_of_parameters': result_dict['number_of_parameters'],
                 }

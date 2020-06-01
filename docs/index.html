@@ -2,11 +2,12 @@
 <html>
   <head>
     <title>The Impact of Attention</title>
-    <link rel="stylesheet" type="text/css" href="./index.css">
-
     <!-- Custom Fonts -->
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Julius+Sans+One">
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Libre+Baskerville">
+    
+    <link rel="stylesheet" type="text/css" href="./index.css">
+    <script src="https://d3js.org/d3.v5.js"></script>
   </head>
   <body>
     <header class="stone-background">
@@ -70,6 +71,10 @@
     <section id="experiment-results">
       <div class="horizontal-padding vertical-padding">
 	<h3>Experiment Results</h3>
+	<div id="scatter-plot">
+	  <svg id="scatter-plot-svg"></svg>
+	  <script src="scatter_plot.js"></script>
+	</div>
 	<p>@todo fill this in</p>
 	<p>@todo fill this in</p>
 	<p>@todo fill this in</p>
