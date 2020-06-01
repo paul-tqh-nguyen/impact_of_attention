@@ -78,14 +78,8 @@ const render = data => {
     scatterPlotGroup.selectAll('circle').data(data)
         .enter()
         .append('circle') 
-        .attr('y', datum => {
-            // console.log(`getDatumLoss(datum) ${getDatumLoss(datum)}`);
-            return yScale(getDatumLoss(datum));
-        })
-        .attr('x', datum => {
-            // console.log(`getDatumParameterCount(datum) ${getDatumParameterCount(datum)}`);
-            return xScale(getDatumParameterCount(datum));
-        })
+        .attr('y', datum => yScale(getDatumLoss(datum)))
+        .attr('x', datum => xScale(getDatumParameterCount(datum)))
         .attr('r', 4);
 
 };
@@ -93,6 +87,7 @@ const render = data => {
 const redraw = () => {
     d3.json(data_location)
         .then(data => {
+            console.log(0);
             let extract_data = datum => {
                 return {
                     test_loss: parseFloat(datum.test_loss),
@@ -100,11 +95,14 @@ const redraw = () => {
                     number_of_parameters: parseInt(datum.number_of_parameters)
                 };
             };
+            console.log(1);
             let attention_data = data['attention'].map(extract_data);
+            console.log(2);
             let plain_rnn_data = data['plain_rnn'].map(extract_data);
+            console.log(3);
             render(attention_data, plain_rnn_data);
         }).catch(err => {
-            console.error(err);
+            console.error(err.message);
             return;
         });
 };
