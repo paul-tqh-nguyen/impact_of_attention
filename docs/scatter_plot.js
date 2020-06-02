@@ -10,7 +10,13 @@ const xAxisGroup = scatterPlotGroup.append('g');
 const xAxisLabel = xAxisGroup.append('text');
 const yAxisGroup = scatterPlotGroup.append('g');
 const yAxisLabel = yAxisGroup.append('text');
-    
+const legend = scatterPlotGroup.append('g');
+const legendBoundingBox = legend.append('rect');
+const attentionLegendText = legend.append('text');
+const plainRNNLegendText = legend.append('text');
+const attentionLegendCircle = legend.append('circle');
+const plainRNNLegendCircle = legend.append('circle');
+
 const getDatumLoss = datum => datum.test_loss;
 const getDatumParameterCount = datum => datum.number_of_parameters;
 
@@ -26,8 +32,10 @@ const xAxisRightPaddingAmount = 1000000;
 
 const scatterPointRadius = 3;
 const scatterPointFillOpacity = 0.3;
-const attention_fill = "red";
-const plain_rnn_fill = "blue";
+const attentionFill = "red";
+const plainRNNFill = "blue";
+const attentionLegendKeyText = "Attention";
+const plainRNNLegendKeyText = "Plain RNN";
 
 const render = (attention_data, plain_rnn_data) => {
     
@@ -53,11 +61,52 @@ const render = (attention_data, plain_rnn_data) => {
     
     scatterPlotGroup.attr('transform', `translate(${margin.left}, ${margin.top})`);
 
+    const labelSize = Math.min(20, innerWidth/40)
     scatterPlotTitle
-        .style('font-size', Math.min(20, innerWidth/40))
+        .style('font-size', labelSize)
         .text("Test Accuracy vs Model Parameter Count")
         .attr('x', innerWidth * 0.225)
         .attr('y', -10);
+
+    const legendKeyFontSize = Math.min(15, innerWidth/40);
+    const attentionLegendKeyX = innerWidth - attentionLegendKeyText.length * legendKeyFontSize;
+    const attentionLegendKeyY = innerHeight - legendKeyFontSize * 4.5;
+    const plainRNNLegendKeyX = innerWidth - plainRNNLegendKeyText.length * legendKeyFontSize;
+    const plainRNNLegendKeyY = innerHeight - legendKeyFontSize * 3;
+    const legendBoundingBoxX = attentionLegendKeyX - legendKeyFontSize / 2;
+    const legendBoundingBoxY = attentionLegendKeyY - legendKeyFontSize * 1.5;
+    const legendBoundingBoxWidth = Math.max(attentionLegendKeyText.length, plainRNNLegendKeyText.length) * legendKeyFontSize * 0.75;
+    const legendBoundingBoxHeight = legendKeyFontSize * 4;
+    legendBoundingBox
+        .attr('x', legendBoundingBoxX)
+        .attr('y', legendBoundingBoxY)
+        .attr('width', legendBoundingBoxWidth)
+        .attr('height', legendBoundingBoxHeight)
+        .style('stroke-width', 1)
+        .style('stroke', 'black')
+        .attr('fill', 'white');
+    attentionLegendCircle
+        .attr('cx', attentionLegendKeyX + legendKeyFontSize / 2)
+        .attr('cy', attentionLegendKeyY - legendKeyFontSize * 0.75 + legendKeyFontSize / 2)
+        .attr('r', legendKeyFontSize / 2)
+        .attr('fill', attentionFill);
+    plainRNNLegendCircle
+        .attr('cx', plainRNNLegendKeyX + legendKeyFontSize / 2)
+        .attr('cy', plainRNNLegendKeyY - legendKeyFontSize * 0.75 + legendKeyFontSize / 2)
+        .attr('r', legendKeyFontSize / 2)
+        .attr('fill', plainRNNFill);
+    attentionLegendText
+        .style('font-size', legendKeyFontSize)
+        .html(attentionLegendKeyText)
+        .attr('x', attentionLegendKeyX + legendKeyFontSize * 1.25)
+        .attr('y', attentionLegendKeyY)
+        .attr('stroke', attentionFill);
+    plainRNNLegendText
+        .style('font-size', legendKeyFontSize)
+        .html(plainRNNLegendKeyText)
+        .attr('x', plainRNNLegendKeyX + legendKeyFontSize * 1.25)
+        .attr('y', plainRNNLegendKeyY)
+        .attr('stroke', plainRNNFill);
     
     const yAxisTickFormat = number => d3.format('.3f')(number);
     yAxisGroup.call(d3.axisLeft(yScale).tickFormat(yAxisTickFormat).tickSize(-innerWidth));
@@ -66,7 +115,7 @@ const render = (attention_data, plain_rnn_data) => {
     yAxisGroup.selectAll('.tick text')
         .attr('transform', 'translate(-3.0, 0.0)');
     yAxisLabel
-        .style('font-size', 15)
+        .style('font-size', labelSize * 0.8)
         .attr('fill', 'black')
         .attr("transform", "rotate(-90)")
         .attr('y', -60)
@@ -81,7 +130,7 @@ const render = (attention_data, plain_rnn_data) => {
     xAxisGroup.selectAll('.tick text')
         .attr('transform', 'translate(0.0, 5.0)');
     xAxisLabel
-        .style('font-size', 15)
+        .style('font-size', labelSize * 0.8)
         .attr('fill', 'black')
         .attr('y', margin.bottom * 0.75)
         .attr('x', innerWidth / 2)
@@ -95,7 +144,7 @@ const render = (attention_data, plain_rnn_data) => {
         .attr('cy', datum => yScale(getDatumLoss(datum)))
         .attr('cx', datum => xScale(getDatumParameterCount(datum)))
         .attr('r', scatterPointRadius)
-        .attr('fill', attention_fill)
+        .attr('fill', attentionFill)
         .attr('fill-opacity', scatterPointFillOpacity);
     
     plainRNNScatterPoints.selectAll('circle').data(plain_rnn_data)
@@ -106,7 +155,7 @@ const render = (attention_data, plain_rnn_data) => {
         .attr('cy', datum => yScale(getDatumLoss(datum)))
         .attr('cx', datum => xScale(getDatumParameterCount(datum)))
         .attr('r', scatterPointRadius)
-        .attr('fill', plain_rnn_fill)
+        .attr('fill', plainRNNFill)
         .attr('fill-opacity', scatterPointFillOpacity);
 
 };
