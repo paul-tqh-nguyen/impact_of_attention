@@ -32,7 +32,7 @@ import json
 import pandas as pd
 from collections import OrderedDict
 from typing import Tuple, Iterable
-from misc_utilities import implies, timer, debug_on_error, tqdm_with_message
+from misc_utilities import implies, timer, tqdm_with_message
 from matplotlib import pyplot as plt
 
 import torch
@@ -48,8 +48,18 @@ from torchtext import datasets
 ################################################
 
 #SEED = 1234
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 OUTPUT_SIZE = 2
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DEVICE_ID = None if DEVICE == 'cpu' else torch.cuda.current_device()
+
+def set_global_device_id(global_device_id: int) -> None:
+    assert DEVICE.type == 'cuda'
+    assert global_device_id < torch.cuda.device_count()
+    global DEVICE_ID
+    DEVICE_ID = global_device_id
+    torch.cuda.set_device(DEVICE_ID)
+    return
 
 _ENABLE_MODEL_CHART_GENERATION = False
 

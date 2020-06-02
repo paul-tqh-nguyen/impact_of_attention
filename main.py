@@ -65,7 +65,7 @@ def random_model_hyperparameter_specification() -> dict:
     choices_for_attention_intermediate_size = [8, 32] if final_representation == 'attention' else [0]
     attention_intermediate_size = random.choice(choices_for_attention_intermediate_size)
     
-    output_directory = f"./results/final_repr_{final_representation}_batch_{batch_size}_max_vocab_{max_vocab_size}_embedding_spec_{pre_trained_embedding_specification}_encoding_size_{encoding_hidden_size}_num_encoding_{number_of_encoding_layers}_attn_inter_size_{attention_intermediate_size}_num_attn_heads_{number_of_attention_heads}_dropout_{dropout_probability}/"
+    output_directory = f"./data/results/final_repr_{final_representation}_batch_{batch_size}_max_vocab_{max_vocab_size}_embedding_spec_{pre_trained_embedding_specification}_encoding_size_{encoding_hidden_size}_num_encoding_{number_of_encoding_layers}_attn_inter_size_{attention_intermediate_size}_num_attn_heads_{number_of_attention_heads}_dropout_{dropout_probability}/"
     
     return {
         'final_representation': final_representation,
@@ -100,8 +100,9 @@ def unevaluated_model_hyperparameter_specification() -> dict:
         has_already_been_evaluated = model_hyperparameter_specification_has_been_evaluated(model_hyperparameter_specification)
     return model_hyperparameter_specification
 
-def train_models() -> None:
+def train_models(cuda_device_id: int) -> None:
     import models
+    models.set_global_device_id(cuda_device_id)
     number_of_epochs = 5
     output_size = 2
     while True:
@@ -148,19 +149,20 @@ def generate_comparison_documents() -> None:
 # Driver #
 ##########
 
-@debug_on_error
+#@debug_on_error
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-train-models', action='store_true', help=" Instantiate the process of training models we intend to compare. This is intended to run indefinitely as the number of models is explosive.")
+    parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
+    parser.add_argument('-train-models', metavar=('cuda_device_id',), help=" Instantiate the process of training models we intend to compare. This is intended to run indefinitely as the number of models is explosive.")
     parser.add_argument('-generate-comparison-documents', action='store_true', help=" Instantiate the process of generating documents and visualizations comparing all of our models.")
     args = parser.parse_args()
-    number_of_args_specified = sum(map(int,vars(args).values()))
+    number_of_args_specified = sum(map(int,map(bool,vars(args).values())))
     if number_of_args_specified == 0:
         parser.print_help()
     elif number_of_args_specified > 1:
         print("Please specify exactly one action.")
-    elif args.train_models:
-        train_models()
+    elif args.train_models is not None:
+        cuda_device_id = int(args.train_models)
+        train_models(cuda_device_id)
     elif args.generate_comparison_documents:
         generate_comparison_documents()
     elif args.deploy_comparison_documents:
