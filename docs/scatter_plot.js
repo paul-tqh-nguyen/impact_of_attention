@@ -1,5 +1,5 @@
 
-const data_location = "../visualization_data/accuracy_vs_number_of_parameters.json";
+const data_location = "./visualization_data/accuracy_vs_number_of_parameters.json";
 
 const svg = d3.select('#scatter-plot-svg');
 const scatterPlotGroup = svg.append('g');
