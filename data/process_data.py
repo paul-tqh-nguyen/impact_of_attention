@@ -25,9 +25,9 @@ from misc_utilities import *
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), './results')
 
 NUMBER_OF_BEST_RESULTS_PER_ARCHITECTURE_TO_GATHER = 10
-BEST_RESULTS_PER_ARCHITECTURE_OUTPUT_JSON_FILE_LOCATION = os.path.join(os.path.dirname(__file__), './best_results.json')
+BEST_RESULTS_PER_ARCHITECTURE_OUTPUT_JSON_FILE_LOCATION = os.path.join(os.path.dirname(__file__), './../docs/visualization_data/best_results.json')
 
-ACCURACY_VS_NUMBER_OF_PARAMETERS_JSON_FILE_LOCATION = os.path.join(os.path.dirname(__file__), './accuracy_vs_number_of_parameters.json')
+ACCURACY_VS_NUMBER_OF_PARAMETERS_JSON_FILE_LOCATION = os.path.join(os.path.dirname(__file__), './../docs/visualization_data/accuracy_vs_number_of_parameters.json')
 
 ################
 # Process Data #
