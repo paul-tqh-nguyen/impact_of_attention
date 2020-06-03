@@ -145,7 +145,7 @@ p {
 
 #bar-chart {
     height: 80vh;
-    width: 80vw;
+    width: 60vw;
 }
 
 #bar-chart-svg {
@@ -157,6 +157,16 @@ p {
 }
 
 #scatter-plot-svg {
+}
+
+#line-graph {
+    border: 1 solid green;
+    height: 80vh;
+    width: 60vw;
+}
+
+#line-graph-svg {
+    border: 1 solid green;
 }
 
 /**********/
