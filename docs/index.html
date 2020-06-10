@@ -25,17 +25,49 @@
     <section id="experiment-overview" class="stone-background">
       <div class="horizontal-padding vertical-padding">
 	<h3>Experiment Overview</h3>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
+	<p>We're going to compare the performance of two types of deep learning architectures, a vanilla LSTM architecture and an LSTM architecture with attention, on the <a target="_blank" href="http://ai.stanford.edu/~amaas/data/sentiment/">IMDB dataset</a> for binary sentiment prediction.</p>
+	<p>The dataset contains 25,000 examples for training/validation and 25,000 examples for testing.</p>
+	<p>A 70/30 split will be used for training and validation.</p>
+	<p>Our vanilla LSTM models will have a word embedding layer, LSTM layers, and a fully connected layer. Dropout is applied after embedding and each LSTM layer.</p>
+	<p>Our LSTM with attention models will have a word embedding layer, LSTM layers, a self-attention layer, and a fully connected layer. We're going to use <a target="_blank" href="Zhouhan Lin">Zhouhan Lin's self-attention mechanism</a>. Dropout is applied after embedding and each LSTM layer.</p>
+	<p>We'll perform a random search over the hyperparameter space of both architectures and compare the testing set loss. We'll use the validation dataset to compare training speed.</p>
+	<p style="padding-bottom: 0px;">The hyperparameter space of the vanilla LSTM models are described by the following:</p>
+	<ul>
+	  <li>Choices for Batch Size: [32]</li>
+	  <li>Choices for Max Vocab Size: [25,000, 50,000]</li>
+	  <li>Choices for Word Embedding:
+	    <table id="word-embedding-choice-table" style="">
+	      <tr>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.6B.50d</a></td>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.twitter.27B.25d</a></td>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.42B.300d</a></td>
+		<td><a href="https://fasttext.cc/docs/en/pretrained-vectors.html">fasttext.en.300d</a></td>
+		<td><a href="https://github.com/hassyGo/charNgram2vec">charngram.100d</a></td>
+	      </tr>
+	      <tr>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.6B.100d</a></td>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.twitter.27B.50d</a></td>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.840B.300d</a></td>
+		<td><a href="https://fasttext.cc/docs/en/pretrained-vectors.html">fasttext.simple.300d</a></td>
+	      </tr>
+	      <tr>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.6B.200d</a></td>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.twitter.27B.100d</a></td>
+	      </tr>
+	      <tr>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.6B.300d</a></td>
+		<td><a href="https://nlp.stanford.edu/projects/glove/">glove.twitter.27B.200d</a></td>
+	      </tr>
+	    </table>
+	  </li>
+	  <li>Choices for Number of LSTM Layers: [1, 2]</li>
+	  <li>Choices for Dropout Probability: [0.0, 0.25, 0.5]</li>
+	</ul>
+	<p style="padding-bottom: 0px;">The hyperparameter space of the LSTM models with are the same as those for the vanilla LSTM models in addition to the following:</p>
+	<ul>
+	  <li>Choices for Attention Head Count: [1, 2, 32]</li>
+	  <li>Choices for Attention Intermediate Size: [8, 32]</li>
+	</ul>
       </div>
     </section>
     <section id="experiment-results">
@@ -59,11 +91,6 @@
 	<p>@todo fill this in</p>
 	<p>@todo fill this in</p>
 	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
 	<div id="line-graph" class="svg-container-center">
 	  <svg id="line-graph-svg"></svg>
 	  <script src="line_graph.js"></script>
@@ -78,17 +105,11 @@
 	<p>@todo fill this in</p>
 	<p>@todo fill this in</p>
 	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
       </div>
       <table style="table-layout: fixed; width: 100%; padding-top: 40px; padding-bottom: 40px;">
-      	<tr>
-      	  <td style="width:10%;"></td>
-      	  <td style="width:30%;">
+	<tr>
+	  <td style="width:10%;"></td>
+	  <td style="width:30%;">
       	    <card class="stone-background">
       	      <a target="_blank" href="https://github.com/paul-tqh-nguyen">
       		<div class="card-text">
@@ -97,9 +118,9 @@
       		</div>
       	      </a>
       	    </card>
-      	  </td>
-      	  <td style="width:20%;"></td>
-      	  <td style="width:30%;">
+	  </td>
+	  <td style="width:20%;"></td>
+	  <td style="width:30%;">
       	    <card class="stone-background">
       	      <a target="_blank" href="https://paul-tqh-nguyen.github.io/about/">
       		<div class="card-text">
@@ -108,9 +129,9 @@
       		</div>
       	      </a>
       	    </card>
-      	  </td>
-      	  <td style="width:10%;"></td>
-      	</tr>
+	  </td>
+	  <td style="width:10%;"></td>
+	</tr>
       </table>
     </section>
   </body>

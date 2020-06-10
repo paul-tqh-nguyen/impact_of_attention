@@ -73,6 +73,14 @@ header {
     background-size: auto, auto, 100% 100%;
 }
 
+a {
+    color: #0095ff;
+}
+
+.stone-background a {
+    color: #ffe09e;
+}
+
 .stone-background h3 {
     color: #fff;
 }
@@ -129,12 +137,22 @@ p {
     margin-block-end: 0em;
 }
 
-ol li {
+li {
     font-family: 'Libre Baskerville', sans-serif;
     font-size: 0.85em;
-    padding-bottom: 20px;
+    padding-bottom: 10px;
     margin-left: 100px;
     margin-right: 100px;
+}
+
+#word-embedding-choice-table {
+    width:100%;
+    padding-left: 50px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#word-embedding-choice-table tr {
 }
 
 /*******/
@@ -179,6 +197,10 @@ ol li {
 /**********/
 /* Footer */
 /**********/
+
+card p {
+    padding: 0px;
+}
 
 card a {
     color: #fff;
