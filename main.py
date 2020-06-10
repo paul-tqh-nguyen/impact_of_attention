@@ -140,7 +140,7 @@ def train_models(cuda_device_id: int) -> None:
         print("\n\n")
     return
 
-def generate_comparison_documents() -> None:
+def process_data() -> None:
     from data import process_data
     process_data.process_data()
     return 
@@ -152,8 +152,8 @@ def generate_comparison_documents() -> None:
 #@debug_on_error
 def main() -> None:
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
-    parser.add_argument('-train-models', metavar=('cuda_device_id',), help=" Instantiate the process of training models we intend to compare. This is intended to run indefinitely as the number of models is explosive.")
-    parser.add_argument('-generate-comparison-documents', action='store_true', help=" Instantiate the process of generating documents and visualizations comparing all of our models.")
+    parser.add_argument('-train-models', metavar=('cuda_device_id',), help="Instantiate the process of training models we intend to compare. This is intended to run indefinitely as the number of models is explosive.")
+    parser.add_argument('-process-data', action='store_true', help="Start process of aggregating the scores over all of our models for analysis.")
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,map(bool,vars(args).values())))
     if number_of_args_specified == 0:
@@ -163,8 +163,8 @@ def main() -> None:
     elif args.train_models is not None:
         cuda_device_id = int(args.train_models)
         train_models(cuda_device_id)
-    elif args.generate_comparison_documents:
-        generate_comparison_documents()
+    elif args.process_data:
+        process_data()
     elif args.deploy_comparison_documents:
         deploy_comparison_documents()
     else:
