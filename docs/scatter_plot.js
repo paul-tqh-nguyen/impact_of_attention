@@ -65,8 +65,8 @@ const scatterPlotMain = () => {
         const labelSize = Math.min(20, innerWidth/40);
         scatterPlotTitle
             .style('font-size', labelSize)
-            .text("Test Accuracy vs Model Parameter Count")
-            .attr('x', innerWidth * 0.225)
+            .text("Test Loss vs Model Parameter Count")
+            .attr('x', innerWidth * 0.325)
             .attr('y', -10);
         
         const legendKeyFontSize = Math.min(15, innerWidth/40);

@@ -19,7 +19,7 @@
 	<p>As <a target="_blank" href="https://medium.com/@karpathy/yes-you-should-understand-backprop-e2f06eab496b#:~:text=%3E%20The%20problem%20with%20Backpropagation%20is,them%20work%E2%80%9D%20on%20your%20data.">Andrej Karpathy</a> states, "Backpropagation is a <a href="https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/" target="_blank">leaky abstraction</a>... If you try to ignore how it works under the hood because 'TensorFlow automagically makes my networks learn', you will not be ready to wrestle with the dangers it presents, and you will be much less effective at building and debugging neural networks."</p>
 	<p>My colleague makes the exact mistake that <a target="_blank" href="https://cs.stanford.edu/people/karpathy/">Andrej Karpathy</a> points to by believing that an LSTM can magically learn the exact parameters necessary to get the best results possible.</p>
 	<p>For a theoretical explanation of why my colleague's assumptions are flawed or how attention mechanism work, there are many resources elsewhere that cover this (e.g. <a target="_blank" href="https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html">here</a>), so I won't repeat what's already been said.</p>
-	<p>Instead, I'll provide evidence against the claim that an LSTM can implicitly learn how to perform attention (and thus attention mechanisms don't contribute anything to an LSTM) by showing empirical evidence that an LSTM with an explicit attention mechanism can outperform a vanilla LSTM in terms of training time, loss minimization, and loss minimization per parameter (i.e. the LSTM models with attention can achieve smaller loss with fewer parameters than vanilla LSTMs).</p>
+	<p>Instead, I'll provide evidence against the claim that an LSTM can implicitly learn how to perform attention (and thus attention mechanisms don't contribute anything to an LSTM) by showing empirical evidence that an LSTM with an explicit attention mechanism can outperform a vanilla LSTM in terms of time to convergence, loss minimization, and loss minimization per parameter (i.e. the LSTM models with attention can achieve smaller loss with fewer parameters than vanilla LSTMs).</p>
       </div>
     </section>
     <section id="experiment-overview" class="stone-background">
@@ -30,7 +30,7 @@
 	<p>A 70/30 split will be used for training and validation.</p>
 	<p>Our vanilla LSTM models will have a word embedding layer, LSTM layers, and a fully connected layer. Dropout is applied after embedding and each LSTM layer.</p>
 	<p>Our LSTM with attention models will have a word embedding layer, LSTM layers, a self-attention layer, and a fully connected layer. We're going to use <a target="_blank" href="Zhouhan Lin">Zhouhan Lin's self-attention mechanism</a>. Dropout is applied after embedding and each LSTM layer.</p>
-	<p>We'll perform a random search over the hyperparameter space of both architectures and compare the testing set loss. We'll use the validation dataset to compare training speed.</p>
+	<p>We'll perform a random search over the hyperparameter space of both architectures and compare the testing set loss. We'll use the validation dataset to compare training time until convergence.</p>
 	<p style="padding-bottom: 0px;">The hyperparameter space of the vanilla LSTM models are described by the following:</p>
 	<ul>
 	  <li>Choices for Batch Size: [32]</li>
@@ -68,33 +68,38 @@
 	  <li>Choices for Attention Head Count: [1, 2, 32]</li>
 	  <li>Choices for Attention Intermediate Size: [8, 32]</li>
 	</ul>
+	<p>We'll be using binary cross entropy loss and the Adam optimizer.</p>
       </div>
     </section>
     <section id="experiment-results">
       <div class="horizontal-padding vertical-padding">
 	<h3>Experiment Results</h3>
+	<p>Below, we'll compare the vanilla LSTM architecture to the LSTM with attention architecture w.r.t. training time until convergence, loss minimization, and loss minimization per parameter.</p>
+	<p>There were 468 possible hyperparameter combinations for the vanilla LSTM architecture.</p>
+	<p>There were 2808 possible hyperparameter combinations for the LSTM with attention architecture (there were more hyperparameter options for the LSTM with attention models).</p>
+	<p>We completed an exhaustive search over all the possible hyperparameter combinations.</p>
+	<p>Here are the 10 best models for each architecture.</p>
 	<div id="bar-chart" class="svg-container-center">
 	  <svg id="bar-chart-svg"></svg>
 	  <script src="bar_chart.js"></script>
 	</div>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
+	<p>The best LSTM with attention models outperform the best vanilla LSTM models consistenly by a binary cross-entropy score difference of 0.02.</p>
+	<p>We'll next compare the LSTM with attention models to the vanilla LSTM models based on loss minimization per parameter. In particular, we'll analyze loss vs parameter count for each model evaluated.</p>
 	<div id="scatter-plot" class="svg-container-center">
 	  <svg id="scatter-plot-svg"></svg>
 	  <script src="scatter_plot.js"></script>
 	</div>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
-	<p>@todo fill this in</p>
+	<p>Notice that the LSTM with attention models (even when they have fewer parameters than the vanilla LSTM models) consistently achieve a smaller loss.</p>
+	<p>NB: Each of the vertically elongated clusters in the scatter plot above are clusters of models with the same number of LSTM layers. The noticeable hotizontal distances between these vertically elongated clusters are due to the large number of parameters required to add a single LSTM layer.</p>
+	<p>We'll next compare the training time necessary until convergence for the models.</p>
 	<div id="line-graph" class="svg-container-center">
 	  <svg id="line-graph-svg"></svg>
 	  <script src="line_graph.js"></script>
 	</div>
+	<p>When using deep learning models in practice, we aim to avoid overfitting. One method of doing that is to use a validation dataset. We know when our model has started to overfit to the training data when the validation stops decreasing or even starts increasing. The parameter values for a model are chosen based on the validation score since the validation examples are not seen during training.</p>
+	<p>We can measure how quickly a model converges by counting the number of epochsa model takes to reach it's minimum validation loss.</p>
+	<p>The line graph above shows the validation score over time for the 10 best LSTM with attention models and the 10 best vanilla LSTM models.</p>
+	<p>Though the best LSTM with attention models only outperform by a small difference of 0.02 in terms of binary cross entropy loss the best vanilla LSTM models, the best LSTM with attention models converge significantly more quickly than the best vanilla LSTM models. We can see in the line graph above that the LSTM with attention models get very close to their minimum validation scores after 1 epoch while doing the same for the vanilla LSTM models takes more than 3 epochs.</p>
       </div>
     </section>
     <section id="conclusion" class="stone-background">
