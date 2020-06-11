@@ -1,10 +1,19 @@
 #!/usr/bin/python3
-"#!/usr/bin/python3 -OO" # @todo make this the default
 
 """
-"""
 
-# @todo update the doc string
+This file contains functionality to generate data to be visualized in our documentation.
+
+Owner : paul-tqh-nguyen
+
+File Name : process_data.py
+
+File Organization:
+* Imports
+* Globals
+* Process Data
+* Driver
+"""
 
 ###########
 # Imports #
@@ -105,7 +114,10 @@ def generate_accuracy_vs_number_of_parameters_json_file(attention_result_dicts_s
         json.dump(accuracy_vs_number_of_parameters_dict, file_handle)
     return
 
-@debug_on_error
+##########
+# Driver #
+##########
+
 def process_data() -> None:
     attention_result_dicts_sorted, plain_rnn_result_dicts_sorted = get_sorted_result_dicts()
     generate_best_results_per_architecture_json_file(attention_result_dicts_sorted, plain_rnn_result_dicts_sorted)

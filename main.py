@@ -1,16 +1,12 @@
 #!/usr/bin/python3
-"#!/usr/bin/python3 -OO" # @todo make this the default
 
 """
 
 This file contains the main driver for our functionality to:
 * Train models.
-* Generate documents comparing the performance of our models.
-* Deploy the documents comparing the performance of our models to GitHub Pages.
+* Generate data to be visualized in our documentation.
 
 Owner : paul-tqh-nguyen
-
-Created : 03/30/2020
 
 File Name : main.py
 
@@ -149,7 +145,6 @@ def process_data() -> None:
 # Driver #
 ##########
 
-#@debug_on_error
 def main() -> None:
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
     parser.add_argument('-train-models', metavar=('cuda_device_id',), help="Instantiate the process of training models we intend to compare. This is intended to run indefinitely as the number of models is explosive.")

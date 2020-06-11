@@ -1,4 +1,4 @@
-# The Impact Of Attention
+# The Impact of Attention
 
 This repository contains functionality and documentation of an experiment intended to give evidence that attention mechanisms can improve the performance of LSTM-based deep-learning models.
 

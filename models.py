@@ -1,13 +1,10 @@
 #!/usr/bin/python3
-"#!/usr/bin/python3 -OO" # @todo make this the default
 
 """
 
 This file contains several text classification models.
 
 Owner : paul-tqh-nguyen
-
-Created : 03/30/2020
 
 File Name : models.py
 
