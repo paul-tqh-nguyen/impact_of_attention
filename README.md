@@ -8,4 +8,4 @@ We compared vanilla LSTMs to LSTMs with attention (we focused on [Zhouhan Lin's 
 
 We implemented our models using Pytorch and TorchText.
 
-Visualizations were made using [D3.js](https://d3js.org/).
+Visualizations were made using [D3.js](https://d3js.org/) and Matplotlib.

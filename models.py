@@ -61,7 +61,7 @@ def set_global_device_id(global_device_id: int) -> None:
 _ENABLE_MODEL_CHART_GENERATION = False
 
 #torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = True
+#torch.backends.cudnn.deterministic = True
 
 EXPECTED_RESULT_SUMMARY_KEY_WORDS = {
     'number_of_epochs',
@@ -323,7 +323,7 @@ class EEAPClassifier():
     def count_parameters(self) -> int:
         return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
     
-    def predict_sentiment(self, sentence: str) -> str: # @todo use this
+    def predict_sentiment(self, sentence: str) -> str:
         self.model.eval()
         tokenized = [token.text for token in self.nlp.tokenizer(sentence)]
         indexed = [self.text_field.vocab.stoi[t] for t in tokenized]
