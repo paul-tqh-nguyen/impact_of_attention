@@ -172,7 +172,7 @@ li {
 
 #bar-chart {
     height: 80vh;
-    width: 60vw;
+    width: 80vw;
 }
 
 #bar-chart-svg {
@@ -180,7 +180,7 @@ li {
 
 #scatter-plot {
     height: 80vh;
-    width: 60vw;
+    width: 80vw;
 }
 
 #scatter-plot-svg {
@@ -188,7 +188,7 @@ li {
 
 #line-graph {
     height: 80vh;
-    width: 60vw;
+    width: 80vw;
 }
 
 #line-graph-svg {

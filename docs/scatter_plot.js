@@ -153,9 +153,9 @@ const scatterPlotMain = () => {
                 `Number of Epochs: ${datum.number_of_epochs}`,
                 `Batch Size: ${datum.batch_size}`,
                 `Vocab Size: ${datum.vocab_size}`,
-                `Pretrained Embedding Specification: ${datum.pre_trained_embedding_specification}`,
-                `Encoding Hidden Size: ${datum.encoding_hidden_size}`,
-                `Number of Encoding Layers: ${datum.number_of_encoding_layers}`,
+                `Pretrained Embedding: ${datum.pre_trained_embedding_specification}`,
+                `LSTM Hidden Size: ${datum.encoding_hidden_size}`,
+                `Number of LSTM Layers: ${datum.number_of_encoding_layers}`,
             ];
             if (datum.attention_intermediate_size) {
                 toolTipTextLines.push(

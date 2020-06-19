@@ -96,9 +96,9 @@ const barChartMain = () => {
                 `Number of Epochs: ${datum.number_of_epochs}`,
                 `Batch Size: ${datum.batch_size}`,
                 `Vocab Size: ${datum.vocab_size}`,
-                `Pretrained Embedding Specification: ${datum.pre_trained_embedding_specification}`,
-                `Encoding Hidden Size: ${datum.encoding_hidden_size}`,
-                `Number of Encoding Layers: ${datum.number_of_encoding_layers}`
+                `Pretrained Embedding: ${datum.pre_trained_embedding_specification}`,
+                `LSTM Hidden Size: ${datum.encoding_hidden_size}`,
+                `Number of LSTM Layers: ${datum.number_of_encoding_layers}`
             ];
             if (datum.attention_intermediate_size) {
                 toolTipTextLines.push(
@@ -108,7 +108,6 @@ const barChartMain = () => {
             }
             toolTipTextLines.push(
                 `Dropout Probability: ${datum.dropout_probability}`,
-                `Final Representation: ${datum.final_representation}`,
                 `Test Loss: ${datum.test_loss}`,
                 `Test Accuracy: ${datum.test_accuracy}`,
                 `Number of Parameters: ${datum.number_of_parameters}`
@@ -126,9 +125,15 @@ const barChartMain = () => {
             const ephemeralTextLinesGroupBBox = ephemeralTextLinesGroup.node().getBBox();
             const toolTipBoundingBoxWidth = ephemeralTextLinesGroupBBox.width + 2 * labelSize;
             const toolTipBoundingBoxHeight = ephemeralTextLinesGroupBBox.height + labelSize;
+
+            const rightLimit = margin.left + innerWidth;
+            const mouseCloserToRight = mouseX - margin.left > rightLimit - mouseX;
+            const toolTipX = desiredOpacity === 0 ? -svgWidth : (mouseCloserToRight ? margin.left + labelSize : rightLimit - labelSize - toolTipBoundingBoxWidth);
             
-            const toolTipX = mouseX - margin.left > margin.left + innerWidth - mouseX ? margin.left + labelSize : margin.left + innerWidth - labelSize - toolTipBoundingBoxWidth;
-            const toolTipY = mouseY - margin.top > margin.top + innerHeight - mouseY ? margin.top + labelSize : margin.top + innerHeight - labelSize - toolTipBoundingBoxHeight;
+            const bottomLimit = margin.top + innerHeight;
+            const mouseCloserToBottom = mouseY - margin.top > bottomLimit - mouseY;
+            const toolTipY = desiredOpacity === 0 ? -svgHeight : (mouseCloserToBottom ? margin.top + labelSize : bottomLimit - labelSize - toolTipBoundingBoxHeight);
+            
             toolTipBoundingBox
                 .attr('x', toolTipX)
                 .attr('y', toolTipY)
