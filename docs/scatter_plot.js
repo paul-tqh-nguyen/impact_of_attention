@@ -18,11 +18,9 @@ const scatterPlotMain = () => {
     const plainRNNLegendText = legend.append('text');
     const attentionLegendCircle = legend.append('circle');
     const plainRNNLegendCircle = legend.append('circle');
-    const toolTipGroup = svg.append('g')
-          .attr('id', 'tool-tip');
+    const toolTipGroup = svg.append('g');
     const toolTipBoundingBox = toolTipGroup
           .append('rect')
-          .attr('id', 'tool-tip-bounding-box')
           .style("opacity", 0);
     
     const getDatumLoss = datum => datum.test_loss;
@@ -189,6 +187,8 @@ const scatterPlotMain = () => {
             toolTipBoundingBox
                 .attr('x', toolTipX)
                 .attr('y', toolTipY)
+                .style('stroke-width', 1)
+                .style('stroke', 'black')
                 .style('fill', backgroundColor)
                 .attr('width', toolTipBoundingBoxWidth)
                 .attr('height', toolTipBoundingBoxHeight);
