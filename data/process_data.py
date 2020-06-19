@@ -95,19 +95,31 @@ def generate_best_results_per_architecture_json_file(attention_result_dicts_sort
 
 def generate_accuracy_vs_number_of_parameters_json_file(attention_result_dicts_sorted: List[dict], plain_rnn_result_dicts_sorted: List[dict]) -> None:
     with open(ACCURACY_VS_NUMBER_OF_PARAMETERS_JSON_FILE_LOCATION, 'w') as file_handle:
+        relevant_keys = [
+            'number_of_epochs',
+            'batch_size',
+            'vocab_size',
+            'pre_trained_embedding_specification',
+            'encoding_hidden_size',
+            'number_of_encoding_layers',
+            'attention_intermediate_size',
+            'number_of_attention_heads',
+            'dropout_probability',
+            'test_loss',
+            'test_accuracy',
+            'number_of_parameters',
+        ]
         accuracy_vs_number_of_parameters_dict = {
             'attention': [
                 {
-                    'test_loss': result_dict['test_loss'],
-                    'test_accuracy': result_dict['test_accuracy'],
-                    'number_of_parameters': result_dict['number_of_parameters'],
+                    relevant_key: result_dict[relevant_key]
+                    for relevant_key in relevant_keys
                 }
                           for result_dict in attention_result_dicts_sorted],
             'plain_rnn': [
                 {
-                    'test_loss': result_dict['test_loss'],
-                    'test_accuracy': result_dict['test_accuracy'],
-                    'number_of_parameters': result_dict['number_of_parameters'],
+                    relevant_key: result_dict[relevant_key]
+                    for relevant_key in relevant_keys
                 }
                           for result_dict in plain_rnn_result_dicts_sorted],
         }
