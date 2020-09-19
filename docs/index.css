@@ -155,9 +155,9 @@ li {
 #word-embedding-choice-table tr {
 }
 
-/*******/
-/* SVG */
-/*******/
+/******************************/
+/* RNN Architecture Depiction */
+/******************************/
 
 .svg-container-center {
     position: relative;
@@ -169,6 +169,98 @@ li {
     margin-top: 30px;
     margin-bottom: 30px;
 }
+
+div.architecture-depiction-container {
+    display: inline-block;
+    text-align: center;
+    padding: 10px;
+    font-family: sans-serif;
+    backdrop-filter: grayscale(50%) brightness(100%);
+    margin-bottom: 100px;
+    border: 1px solid #5f6566;
+    border-radius: 15px;
+}
+
+#architecture-summary svg {
+    background: rgba(219, 219, 219, 0.5);
+}
+
+#arrowhead {
+}
+
+.arrow-line {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+    stroke-opacity: 1.0;
+}
+
+.text-with-bbox-group {
+}
+
+.text-with-bbox-group-text {
+    fill: black;
+}
+
+.text-with-bbox-group-bounding-box {
+    rx: 10;
+    stroke-width: 1.5;
+    stroke: #000;
+    fill: #fff;
+}
+
+.word-group .text-with-bbox-group-bounding-box {
+    rx: 0;
+    stroke-width: 1px;
+}
+
+.word-group .text-with-bbox-group-text {
+    fill: #555;
+    font-style: italic;
+}
+
+.embedding-group .text-with-bbox-group-bounding-box {
+    fill: #fff8c4;
+}
+
+.lstm-group .text-with-bbox-group-bounding-box {
+    fill: #c4dbff;
+}
+
+.attention-group .text-with-bbox-group-bounding-box {
+    fill: #c4ffd0;
+}
+
+.softmax-group .text-with-bbox-group-bounding-box, .attention-softmax-group .text-with-bbox-group-bounding-box {
+    fill: #ffc4c4;
+}
+
+.mean-group .text-with-bbox-group-bounding-box, .attention-sum-group .text-with-bbox-group-bounding-box {
+    fill: #e4c4ff;
+}
+
+.fully-connected-group .text-with-bbox-group-bounding-box,
+.prediction-group .text-with-bbox-group-bounding-box {
+    fill: #c4fdff;
+}
+
+.sigmoid-group .text-with-bbox-group-bounding-box {
+    fill: #ffdec4;
+}
+
+.output-group .text-with-bbox-group-bounding-box {
+    rx: 0;
+    stroke-width: 1px;
+    fill: #fff;
+}
+
+.output-group .text-with-bbox-group-text {
+    fill: #555;
+}
+
+/***************************/
+/* Misc. D3 Visualizations */
+/***************************/
 
 #bar-chart {
     height: 80vh;

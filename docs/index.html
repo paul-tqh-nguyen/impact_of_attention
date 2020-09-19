@@ -26,11 +26,20 @@
       <div class="horizontal-padding vertical-padding">
 	<h3>Experiment Overview</h3>
 	<p>We're going to compare the performance of two types of deep learning architectures, a vanilla LSTM architecture and an LSTM architecture with attention, on the <a target="_blank" href="http://ai.stanford.edu/~amaas/data/sentiment/">IMDB dataset</a> for binary sentiment prediction.</p>
+	<p>Our vanilla LSTM models will have a word embedding layer, LSTM layers, and a fully connected layer. Dropout is applied after embedding and each LSTM layer.</p>
+	<p>Here's a depiction of our vanilla LSTM architecture.</p>
+	<div class="architecture-depiction-container svg-container-center">
+	  <svg id="vanilla-depiction"></svg>
+	</div>
+	<p>Our LSTM with attention models will have a word embedding layer, LSTM layers, a self-attention layer, and a fully connected layer. We're going to use <a target="_blank" href="https://arxiv.org/abs/1703.03130">Zhouhan Lin's self-attention mechanism</a>. Dropout is applied after embedding and each LSTM layer.</p>
+	<p>Here's a depiction of our LSTM architecture with attention.</p>
+	<div class="architecture-depiction-container svg-container-center">
+	  <svg id="attention-depiction"></svg>
+	</div>
+	<script src="architecture_depiction.js"></script>
 	<p>The dataset contains 25,000 examples for training/validation and 25,000 examples for testing.</p>
 	<p>A 70/30 split of the training examples will be used for training and validation.</p>
-	<p>Our vanilla LSTM models will have a word embedding layer, LSTM layers, and a fully connected layer. Dropout is applied after embedding and each LSTM layer.</p>
-	<p>Our LSTM with attention models will have a word embedding layer, LSTM layers, a self-attention layer, and a fully connected layer. We're going to use <a target="_blank" href="https://arxiv.org/abs/1703.03130">Zhouhan Lin's self-attention mechanism</a>. Dropout is applied after embedding and each LSTM layer.</p>
-	<p>We'll perform a random search over the hyperparameter space of both architectures and compare the testing set loss. We'll use the validation dataset to compare training time until convergence.</p>
+	<p>We'll perform a grid search over the hyperparameter space of both architectures and compare the testing set loss. We'll use the validation dataset to compare training time until convergence.</p>
 	<p style="padding-bottom: 0px;">The hyperparameter space of the vanilla LSTM models are described by the following:</p>
 	<ul>
 	  <li>Choices for Batch Size: [32]</li>
@@ -78,7 +87,7 @@
 	<p>There were 468 possible hyperparameter combinations for the vanilla LSTM architecture.</p>
 	<p>There were 2808 possible hyperparameter combinations for the LSTM with attention architecture (there were more hyperparameter options for the LSTM with attention models).</p>
 	<p>We completed an exhaustive search over all the possible hyperparameter combinations.</p>
-	<p>The first result to note is that the hyperparameter search space for the LSTM with attention architecture is much larger. Thus, random search will take much longer and there are many possibly bad hyperparameter selections to weed out. In practice, I've found that discovering a well-performing hyperparameter selection did not require an exhaustive search and yielded the benefits to be discussed below.</p>
+	<p>The first result to note is that the hyperparameter search space for the LSTM with attention architecture is much larger. Thus, grid search will take much longer and there are many possibly bad hyperparameter selections to weed out. In practice, I've found that discovering a well-performing hyperparameter selection did not require an exhaustive search and yielded the benefits to be discussed below.</p>
 	<p>Here are the 10 best models for each architecture.</p>
 	<div id="bar-chart" class="svg-container-center">
 	  <svg id="bar-chart-svg"></svg>
