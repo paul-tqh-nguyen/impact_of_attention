@@ -20,6 +20,7 @@
 	<p>My colleague makes the exact mistake that <a target="_blank" href="https://cs.stanford.edu/people/karpathy/">Andrej Karpathy</a> points to by believing that an LSTM can magically learn the exact parameters necessary to get the best results possible.</p>
 	<p>For a theoretical explanation of why my colleague's assumptions are flawed or how attention mechanism work, there are many resources elsewhere that cover this (e.g. <a target="_blank" href="https://lilianweng.github.io/lil-log/2018/06/24/attention-attention.html">here</a>), so I won't repeat what's already been said.</p>
 	<p>Instead, I'll provide evidence against the claim that an LSTM can implicitly learn how to perform attention (and thus attention mechanisms don't contribute anything to an LSTM) by showing empirical evidence that an LSTM with an explicit attention mechanism can outperform a vanilla LSTM in terms of loss minimization, loss minimization per parameter (i.e. the LSTM models with attention can achieve smaller loss with fewer parameters than vanilla LSTMs), and time to convergence.</p>
+	<p>The source code for the models we'll discuss can be found <a target="_blank" href="https://github.com/paul-tqh-nguyen/impact_of_attention">here</a>.</p>
       </div>
     </section>
     <section id="experiment-overview" class="stone-background">

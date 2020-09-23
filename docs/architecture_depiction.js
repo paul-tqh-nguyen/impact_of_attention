@@ -195,7 +195,6 @@
         /* Blocks */
 
         const words = ['"Films"', '"similar"', '"to"', '&hellip;', '"production."'];
-        const outputClassCount = 4+Math.floor(Math.random()*3);
         
         // Words
         const wordGroups = words.map((word, i) => {
@@ -336,7 +335,6 @@
         /* Blocks */
 
         const words = ['"This"', '"movie"', '"initially"', '&hellip;', '"clarity."'];
-        const outputClassCount = 4+Math.floor(Math.random()*3);
         
         // Words
         const wordGroups = words.map((word, i) => {
